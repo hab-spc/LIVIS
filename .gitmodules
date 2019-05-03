@@ -1,0 +1,3 @@
+[submodule "SPCConvert"]
+	path = SPCConvert
+	url = https://github.com/planktivore/SPCConvert
