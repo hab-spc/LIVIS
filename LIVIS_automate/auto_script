@@ -1,0 +1,26 @@
+#bin/sh
+
+# This is the set of commands to execute on the local machine for:
+# 1. Transfer the .tif images from the local machine to a folder in SVCL server
+# 2. Convert the .tif files into jpeg (into the preferred input type of the classifier) using spcconvert
+# 3. Deploy the classifier
+# 4. Obtain the predictions
+# 5. Send the predictions back to SIO server
+
+# Step 1
+# We transfer the images on the local machine to the SVCL Server using scp command
+# Change the paths accordingly:
+# source_path = "/Users/snehakondur/Downloads/spcvisualizer/sampleImgs/sampleImgs"
+# dest_path = "/data6/SnehaKondur/"
+
+scp -r /Users/snehakondur/Downloads/spcvisualizer/sampleImgs/sampleImgs /data6/SnehaKondur/
+
+
+
+# Step 2
+# Using spc convert on the images uploaded to the server
+
+
+
+
+
