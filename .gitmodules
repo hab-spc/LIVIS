@@ -1,3 +1,3 @@
-[submodule "SPCConvert"]
-	path = SPCConvert
-	url = https://github.com/planktivore/SPCConvert
+[submodule "LIVIS_automate/SPCConvert"]
+	path = LIVIS_automate/SPCConvert
+	url = git:github.com/planktivore/SPCConvert.git
