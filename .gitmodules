@@ -1,3 +1,6 @@
 [submodule "LIVIS_automate/SPCConvert"]
 	path = LIVIS_automate/SPCConvert
 	url = git:github.com/planktivore/SPCConvert.git
+[submodule "LIVIS_automate/hab-ml"]
+	path = LIVIS_automate/hab-ml
+	url = https://github.com/hab-spc/hab-ml.git
