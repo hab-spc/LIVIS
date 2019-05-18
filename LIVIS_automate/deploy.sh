@@ -14,6 +14,16 @@
 echo "Enter new data directory name to store on remote machine, followed by [ENTER]: "
 read date
 
+#--
+#open -a coRD
+#open 'smb://spcuser:odroid@192.168.1.110'
+#echo Select `data` directory when mounting and proceed to run camera system
+
+# include into this script ./run_camera.sh upon command
+# put watchdog on the data directory for the latest one after running camera
+# upload those images to the server
+# once imaging is done, run classifier upon yes command
+
 local_dir="/Users/ktl014/PycharmProjects/hab-master/LIVIS/images"
 source_path="$local_dir/$date/*"
 
