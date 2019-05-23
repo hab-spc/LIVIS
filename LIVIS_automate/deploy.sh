@@ -16,7 +16,19 @@ source_path="$source_path/$date"
 mkdir -p $source_path
 
 # Run camera
-ssh odroid@192.168.1.110 "./run_livis.sh $date"
+user=odroid
+host=192.168.1.110
+echo Logging into odroid remote server
+source_dir="LIVIS/LIVIS_automate"
+data_dir=$(ssh $user@$host "cd $source_dir;./run_livis.sh $date")
+
+# Download to local directory
+ID=~/.ssh/id_rsa
+scp -ri $ID $user@$host:$data_dir $source_path
+
+# Uncompress tar file
+source_path="$source_path/0000000000"
+tar -xvf "${source_path}.tar"
 
 # ****************************************************************************
 
@@ -27,7 +39,6 @@ img_dir="$svcl_dir/images/$date/"
 dest_path="$ssh_key:$img_dir"
 
 # Upload images to remote server
-source_path = "$source_path/0000000000"
 ssh $ssh_key "mkdir -p $img_dir"
 scp -r $source_path $dest_path
 
