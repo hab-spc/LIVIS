@@ -22,21 +22,24 @@ echo Logging into odroid remote server
 source_dir="LIVIS/LIVIS_automate"
 data_dir=$(ssh $user@$host "cd $source_dir;./run_livis.sh $date")
 
-# Download to local directory
-ID=~/.ssh/id_rsa
-scp -ri $ID $user@$host:$data_dir $source_path
-
-# Uncompress tar file
-source_path="$source_path/0000000000"
-tar -xvf "${source_path}.tar"
-
+# username: odroid, password: odroid
+#open 'smb://spcuser:odroid@192.168.1.110'
+source_path="$(ls -td -- /Volumes/data/*/ | head -1)0000000000"
+echo "$source_path"
+#source_path=/Volumes/data/1558380800/0000000000
 # ****************************************************************************
+echo Uploading images to svcl server
 
 # Prerepare remote data storage location
 ssh_key="plankton@gpu6"
 svcl_dir="/data6/phytoplankton-db/hab_in_vitro"
-img_dir="$svcl_dir/images/$date/"
+img_dir="$svcl_dir/images/$date"
 dest_path="$ssh_key:$img_dir"
+
+if [ -z "$(ls -A $source_path)" ]; then
+	echo "Images not found in $source_path. Check if images were taken"
+	exit 0
+fi	
 
 # Upload images to remote server
 ssh $ssh_key "mkdir -p $img_dir"
