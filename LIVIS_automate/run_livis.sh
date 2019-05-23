@@ -1,19 +1,18 @@
 #!/usr/bin/env bash
 
-source_dir="/home/odroid"
-sh $source_dir/run_camera
+date=$1
+
+source_path="/home/odroid"
+cd source_dir
+sh run_camera
 
 # Source directory
-source_path=$(ls -td -- $source_dir/data/*/ | head -1)
+#source_path="$(ls -td -- $source_path/data/*/ | head -1)/0000000000"
+source_path="$source_path/data/1558380800/0000000000"
 
-echo "Enter date and sample run for data storage location, followed by [ENTER]:"
-read date
-
-ssh_key="plankton@gpu6"
-svcl_dir="/data6/phytoplankton-db/hab_in_vitro"
-img_dir="$svcl_dir/images/$date/"
-dest_path="$ssh_key:$img_dir"
+# Uncompress tar file
+tar -xvf "${source_path}.tar"
 
 # Upload images
-ssh $ssh_key "mkdir -p $img_dir"
+dest_path="/Users/spcuser/Documents/$date"
 scp -r $source_path $dest_path
