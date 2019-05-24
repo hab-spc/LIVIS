@@ -20,17 +20,14 @@ user=odroid
 host=192.168.1.110
 echo Logging into odroid remote server
 source_dir="LIVIS/LIVIS_automate"
-data_dir=$(ssh $user@$host "cd $source_dir;./run_livis.sh $date")
+ssh $user@$host "cd $source_dir;./run_livis.sh $date"
 
-# username: odroid, password: odroid
-#open 'smb://spcuser:odroid@192.168.1.110'
-source_path="$(ls -td -- /Volumes/data/*/ | head -1)0000000000"
-echo "$source_path"
-#source_path=/Volumes/data/1558380800/0000000000
+source_path="$(ls -td -- /Volumes/data/*/ | head -1)"
+#source_path=/Volumes/data/1558641021/
 # ****************************************************************************
-echo Uploading images to svcl server
+echo Uploading images to svcl server. Uncompressing files first.
 
-# Prerepare remote data storage location
+# Prepare remote data storage location
 ssh_key="plankton@gpu6"
 svcl_dir="/data6/phytoplankton-db/hab_in_vitro"
 img_dir="$svcl_dir/images/$date"
@@ -43,11 +40,12 @@ fi
 
 # Upload images to remote server
 ssh $ssh_key "mkdir -p $img_dir"
-scp -r $source_path $dest_path
+scp -r $source_path/* $dest_path
 
 # ****************************************************************************
 
 # Run `auto_script` on remote server to convert images and get predictions
+# expects $date of format `20190523/001`. No 0000000s accompanied.
 cd_dir="cd $svcl_dir/LIVIS_automate"
 activate_env="source activate hab_env"
 deploy="bash deploy_remote.sh $date"
