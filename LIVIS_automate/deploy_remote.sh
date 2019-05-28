@@ -14,7 +14,7 @@ img_dir="$root/images/$date" # test img_dir
 # Uncompress all tar files and join into one folder
 cd "$img_dir"
 for i in *.tar;do tar -xvf $i && rm $i; done
-mkdir "$img_dir/00000"
+mkdir -p "$img_dir/00000"
 for d in $img_dir/000000*; do cp -r $d/* "$img_dir/00000/"; rm -rf $d; done
 
 cd "$root/LIVIS_automate/SPCConvert"
@@ -33,4 +33,3 @@ html_dir="$root/images/${date}/00000_static_html"
 url="$html_dir/spcdata.html"
 pred="$html_dir/predictions.json"
 python addPredictions.py $url $pred
-

@@ -28,7 +28,7 @@ source_path="$(ls -td -- /Volumes/data/*/ | head -1)"
 echo Uploading images to svcl server. Uncompressing files first.
 
 # Prepare remote data storage location
-ssh_key="plankton@gpu6"
+ssh_key="plankton@gpu2"
 svcl_dir="/data6/phytoplankton-db/hab_in_vitro"
 img_dir="$svcl_dir/images/$date"
 dest_path="$ssh_key:$img_dir"
@@ -50,4 +50,11 @@ cd_dir="cd $svcl_dir/LIVIS_automate"
 activate_env="source activate hab_env"
 deploy="bash deploy_remote.sh $date"
 echo Deploying classification
-ssh plankton@gpu6 "$cd_dir;$activate_env;$deploy"
+ssh plankton@gpu2 "$cd_dir;$activate_env;$deploy"
+
+# ****************************************************************************
+
+# Copy back all of the images to the local machine
+dest_path="/Users/spcuser/Documents/$date"
+mkdir -p dest_path
+scp -r "plankton@gpu2:/data6/phytoplankton-db/hab_in_vitro:images/$date" $dest_path
