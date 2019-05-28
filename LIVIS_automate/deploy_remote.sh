@@ -32,4 +32,5 @@ cd "$root/LIVIS_automate/SPCConvert"
 html_dir="$root/images/${date}/00000_static_html"
 url="$html_dir/spcdata.html"
 pred="$html_dir/predictions.json"
-python addPredictions.py $url $pred
+db="$html_dir/js/database.js"
+python addPredictions.py $url $pred $db

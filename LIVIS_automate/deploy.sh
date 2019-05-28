@@ -55,6 +55,6 @@ ssh plankton@gpu2 "$cd_dir;$activate_env;$deploy"
 # ****************************************************************************
 
 # Copy back all of the images to the local machine
-dest_path="/Users/spcuser/Documents/$date"
+dest_path="/Volumes/LACIE\ SHARE/$date"
 mkdir -p dest_path
 scp -r "plankton@gpu2:/data6/phytoplankton-db/hab_in_vitro:images/$date" $dest_path
