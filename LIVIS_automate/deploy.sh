@@ -16,11 +16,16 @@ source_path="$source_path/$date"
 mkdir -p $source_path
 
 # Run camera
-user=odroid
-host=192.168.1.110
-echo Logging into odroid remote server
-source_dir="LIVIS/LIVIS_automate"
-ssh $user@$host "cd $source_dir;./run_livis.sh $date"
+read -p "Run LIVIS Imaging? [y/n]: " -n 1 -r
+echo    # (optional) move to a new line
+if [[ $REPLY =~ ^[Yy]$ ]]
+then
+    user=odroid
+    host=192.168.1.110
+    echo Logging into odroid remote server
+    source_dir="LIVIS/LIVIS_automate"
+    ssh $user@$host "cd $source_dir;./run_livis.sh $date"
+fi
 
 source_path="$(ls -td -- /Volumes/data/*/ | head -1)"
 #source_path=/Volumes/data/1558641021/
@@ -46,15 +51,21 @@ scp -r $source_path/* $dest_path
 
 # Run `auto_script` on remote server to convert images and get predictions
 # expects $date of format `20190523/001`. No 0000000s accompanied.
-cd_dir="cd $svcl_dir/LIVIS_automate"
-activate_env="source activate hab_env"
-deploy="bash deploy_remote.sh $date"
-echo Deploying classification
-ssh plankton@gpu2 "$cd_dir;$activate_env;$deploy"
+
+read -p "Run LIVIS Deployment? [y/n]: " -n 1 -r
+echo    # (optional) move to a new line
+if [[ $REPLY =~ ^[Yy]$ ]]
+then
+    cd_dir="cd $svcl_dir/LIVIS_automate"
+    activate_env="source activate hab_env"
+    deploy="bash deploy_remote.sh $date"
+    echo Deploying classification
+    ssh plankton@gpu2 "$cd_dir;$activate_env;$deploy"
+fi
 
 # ****************************************************************************
 
 # Copy back all of the images to the local machine
-dest_path="/Volumes/LACIE\ SHARE/$date"
+dest_path="/Volumes/LACIE SHARE/$date"
 mkdir -p dest_path
 scp -r "plankton@gpu2:/data6/phytoplankton-db/hab_in_vitro:images/$date" $dest_path
