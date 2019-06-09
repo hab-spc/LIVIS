@@ -12,6 +12,7 @@ source activate hab_env
 img_dir="$root/images/$date" # test img_dir
 
 # Uncompress all tar files and join into one folder
+echo Uncompressing tar files
 cd "$img_dir"
 for i in *.tar;do tar -xvf $i && rm $i; done
 mkdir -p "$img_dir/00000"
@@ -30,7 +31,8 @@ python main.py --mode deploy --batch_size 16 --deploy_data $deploy_data --model_
 # Step 4
 cd "$root/LIVIS_automate/SPCConvert"
 html_dir="$root/images/${date}/00000_static_html"
-url="$html_dir/spcdata.html"
+url="$html_dir/templates/spcdata.html"
 pred="$html_dir/predictions.json"
-db="$html_dir/js/database.js"
+db="$html_dir/static/js/database.js"
 python addPredictions.py $url $pred $db
+echo Predictions added

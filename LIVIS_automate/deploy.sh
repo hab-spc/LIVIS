@@ -30,7 +30,7 @@ fi
 source_path="$(ls -td -- /Volumes/data/*/ | head -1)"
 #source_path=/Volumes/data/1558641021/
 # ****************************************************************************
-echo Uploading images to svcl server. Uncompressing files first.
+echo Uploading images to svcl server
 
 # Prepare remote data storage location
 ssh_key="plankton@gpu2"
@@ -66,6 +66,6 @@ fi
 # ****************************************************************************
 
 # Copy back all of the images to the local machine
-dest_path="/Volumes/LACIE SHARE/$date"
+dest_path="/Volumes/LACIE\ SHARE/$date"
 mkdir -p dest_path
 scp -r "plankton@gpu2:/data6/phytoplankton-db/hab_in_vitro:images/$date" $dest_path
