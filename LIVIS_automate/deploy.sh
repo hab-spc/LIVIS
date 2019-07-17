@@ -1,21 +1,20 @@
 #!/usr/bin/env bash
-# This is the set of commands to execute on the local machine for:
+# This is the set of commands to execute on the local lab machine for:
+# 0. Run image sampling on odroid virtual machine
 # 1. Transfer the .tif images from the local machine to a folder in SVCL server
-# 2. Convert images using spcconvert and deploy model
-# 3. Upload predictions to static html
+# 2. Convert images using spcconvert
+# 3. Deploy model
+# 4. Upload predictions to static html
+# 5. Retrieve predicted images back to lab computer
 
+# NOTE: Steps 2-4 occurs on the SVCL server, hence the `deploy_remote.sh`
+# Step 0
 # ****************************************************************************
 
 echo "Enter date and sample run for data storage location, followed by [ENTER]:"
 read date
 
-# Make data storage location
-#source_path="/Users/ktl014/PycharmProjects/hab-master/LIVIS/images"
-source_path="/Users/spcuser/Documents"
-source_path="$source_path/$date"
-mkdir -p $source_path
-
-# Run camera
+# Ssh into camera virtual machine (odroid) and runs the imaging
 read -p "Run LIVIS Imaging? [y/n]: " -n 1 -r
 echo    # (optional) move to a new line
 if [[ $REPLY =~ ^[Yy]$ ]]
@@ -26,11 +25,14 @@ then
     source_dir="LIVIS/LIVIS_automate"
     ssh $user@$host "cd $source_dir;./run_livis.sh $date"
 fi
-
-source_path="$(ls -td -- /Volumes/data/*/ | head -1)"
-#source_path=/Volumes/data/1558641021/
+# Step 1
 # ****************************************************************************
 echo Uploading images to svcl server
+
+# Navigate to latest generated image dir
+samba_data_dir="/Volumes/data/*/"
+source_path="$(ls -td -- $samba_data_dir | head -1)"
+#source_path=/Volumes/data/1558641021/ #DEBUG purposes
 
 # Prepare remote data storage location
 ssh_key="plankton@gpu2"
@@ -47,6 +49,7 @@ fi
 ssh $ssh_key "mkdir -p $img_dir"
 scp -r $source_path/* $dest_path
 
+# Step 2-4
 # ****************************************************************************
 
 # Run `auto_script` on remote server to convert images and get predictions
@@ -63,6 +66,7 @@ then
     ssh plankton@gpu2 "$cd_dir;$activate_env;$deploy"
 fi
 
+# Step 5
 # ****************************************************************************
 
 # Copy back all of the images to the local machine
