@@ -71,7 +71,6 @@ class Database:
         :param conditions: string with conditions
         :return: result table
         """
-
         if conditions == None:
             query = "SELECT " + cols_needed + " FROM " + table_name
         else:
@@ -83,17 +82,58 @@ class Database:
             return cur.fetchall()
         except:
             print("error in select operation")
-            self.conn.rollback
+            self.conn.rollback()
 
 
-    def update(self, query):
+    def update(self, table_name, new_vals, prim_key_id):
         """ update certain values specified by query
-        :param :
-        :param :
+        :param table_name: name of th table to update
+        :param new_vals: a dict with attributes as keys, and
+                         values as values
+        :param prim_key_id: key value pair as list of size 2 
+                         primary key identifier for row to update
+        :return: None
         """
-        pass
+        query = "UPDATE " + table_name + " SET "
+        for key in new_vals.keys():
+            query += str(key) 
+                    + " " 
+                    + str(new_vals[key]) 
+                    + " , "
 
-    def delete(self, query):
+        # remove last comma, and space
+        query = query[:len(query) - 3]
+        query += " WHERE " 
+                + str(prim_key_id[0]) 
+                + " = " 
+                + str(prim_key_id[1])
+
+        # execute the query
+        try:
+            cur = self.conn.cursor()
+            cur.execute(query)
+        except:
+            print("error in update operation")
+            self.conn.rollback()
+
+    def delete(self, table_name, prim_key_id):
+        """ delete a row from specified table, and prim key value
+        :param table_name: name of the table to delete from 
+        :param prim_key_id: key value pair as list of size 2 
+                         primary key identifier for row to update
+        :return: None
         """
-        """
-        pass
+        query = "DELETE FROM " 
+                + table_name 
+                + " WHERE " 
+                + str(prim_key_id[0]) 
+                + " = " 
+                + str(prim_key_id[1])
+
+        # execute the query
+        try:
+            cur = self.conn.cursor()
+            cur.execute(query)
+        except:
+            print("error in delete operation")
+            self.conn.rollback()
