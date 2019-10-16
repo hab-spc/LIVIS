@@ -64,15 +64,13 @@ class Database:
             print("error in insert operation")
             self.conn.rollback()
 
-    def read(self, table_name, cols_needed, conditions):
+    def read(self, table_name, cols_needed="*", conditions=None):
         """ get all rows, or all rows specified by the query
         :param table_name: name of the table to select from
         :param cols_needed: string with comma separated list of cols needed, defaults to *
         :param conditions: string with conditions
         :return: result table
         """
-        if cols_needed == None:
-            cols_needed = "*"
 
         if conditions == None:
             query = "SELECT " + cols_needed + " FROM " + table_name
@@ -89,7 +87,9 @@ class Database:
 
 
     def update(self, query):
-        """ 
+        """ update certain values specified by query
+        :param :
+        :param :
         """
         pass
 
