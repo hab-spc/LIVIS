@@ -36,6 +36,18 @@ class Database:
         """
         if self.conn != None:
             self.conn.close()
+    
+    def execute(self, operation, query):
+        """ execute the given query
+        :param operation: caller function's name
+        :param query: query to be executed
+        """
+        try:
+            cur = self.conn.cursor()
+            cur.execute(query)
+        except:
+            print("Error in " + str(operation)+ "operation")
+            self.conn.rollback()
 
     def new_table(self, name, schema):
         """ create a new table with the given schema
@@ -44,12 +56,7 @@ class Database:
         :return: None
         """
         query = "CREATE TABLE " + str(name) + " (" + str(schema) +");"
-        try:
-            cur = self.conn.cursor()
-            cur.execute(query)
-        except:
-            print("Error in create table operation")
-            self.conn.rollback()
+        self.execute("create new table", query)
 
     def create(self, query, data):
         """ create rows in table from the given data
@@ -96,25 +103,20 @@ class Database:
         """
         query = "UPDATE " + table_name + " SET "
         for key in new_vals.keys():
-            query += str(key) 
-                    + " " 
-                    + str(new_vals[key]) 
-                    + " , "
+            query += str(key) \
+                    + " " \
+                    + str(new_vals[key]) \
+                    + " , "\
 
         # remove last comma, and space
         query = query[:len(query) - 3]
-        query += " WHERE " 
-                + str(prim_key_id[0]) 
-                + " = " 
-                + str(prim_key_id[1])
+        query += " WHERE " \
+                + str(prim_key_id[0]) \
+                + " = " \
+                + str(prim_key_id[1]) \
 
         # execute the query
-        try:
-            cur = self.conn.cursor()
-            cur.execute(query)
-        except:
-            print("error in update operation")
-            self.conn.rollback()
+        self.execute("update", query)
 
     def delete(self, table_name, prim_key_id):
         """ delete a row from specified table, and prim key value
@@ -123,17 +125,12 @@ class Database:
                          primary key identifier for row to update
         :return: None
         """
-        query = "DELETE FROM " 
-                + table_name 
-                + " WHERE " 
-                + str(prim_key_id[0]) 
-                + " = " 
-                + str(prim_key_id[1])
+        query = "DELETE FROM " \
+                + table_name \
+                + " WHERE " \
+                + str(prim_key_id[0]) \
+                + " = " \
+                + str(prim_key_id[1]) \
 
         # execute the query
-        try:
-            cur = self.conn.cursor()
-            cur.execute(query)
-        except:
-            print("error in delete operation")
-            self.conn.rollback()
+        self.execute("delete", query)
