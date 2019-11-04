@@ -5,9 +5,34 @@ Description: CRUD functions to interact with the database
 """
 
 # imports
+import os
 import sqlite3
 from sqlite3 import Error
 import json
+from pathlib import Path
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]) + '/')
+
+# Third party imports
+import click
+
+# Project level imports
+from config.config import opt, create_table_commands
+
+# Module Level Constants
+DB_PATH = opt.db_path
+CREATE_CMD = create_table_commands
+
+@click.command()
+@click.option('--db_path', default=None, help='DB Path to create.')
+def create_db(db_path):
+    db_path = db_path if db_path else DB_PATH
+    if not os.path.exists(db_path):
+        db = Database(db_path)
+        db.execute(operation='create new table', query=CREATE_CMD['date_sampled'])
+        print('SUCCESS: TABLE CREATED')
+    else:
+        print("FAILED: TABLE ALREADY CREATED")
 
 class Database:
     """ Database instance for CRUD interaction
@@ -46,7 +71,7 @@ class Database:
             cur = self.conn.cursor()
             cur.execute(query)
         except:
-            print("Error in " + str(operation)+ "operation")
+            print("Error in " + str(operation)+ " operation")
             self.conn.rollback()
 
     def new_table(self, name, schema):
@@ -134,3 +159,6 @@ class Database:
 
         # execute the query
         self.execute("delete", query)
+
+if __name__ == '__main__':
+    create_db()
