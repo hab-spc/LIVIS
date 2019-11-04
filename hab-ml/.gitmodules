@@ -1,4 +1,0 @@
-[submodule "spc"]
-	path = spc
-	url = https://github.com/hab-spc/spici.git
-	branch = master
