@@ -7,10 +7,10 @@ Description: CRUD functions to interact with the database
 # imports
 import os
 import sqlite3
-from sqlite3 import Error
-import json
-from pathlib import Path
 import sys
+from pathlib import Path
+from sqlite3 import Error
+
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]) + '/')
 
 # Third party imports
@@ -50,6 +50,7 @@ class Database:
 	    """
         try:
             conn = sqlite3.connect(db_path)
+            print('SUCCESS: Table Connected')
             return conn
         except Error as e:
             print(e)

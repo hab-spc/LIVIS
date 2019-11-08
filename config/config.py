@@ -3,13 +3,12 @@
 from __future__ import absolute_import
 
 # Standard dist imports
-from pprint import pprint
 import os
 from pathlib import Path
 
+from constants.genericconstants import DBConstants as DBCONST
 # Project level imports
 from constants.genericconstants import GenericConstants as CONST
-from constants.genericconstants import DBConstants as DBCONST
 
 # Module level constants
 DEFAULT_ENV = CONST.DEV_ENV
@@ -18,22 +17,37 @@ PROJECT_DIR = Path(__file__).resolve().parents[1]
 create_table_commands = {
     'livis': 'CREATE TABLE livis ()',
     'date_sampled': f'CREATE TABLE date_sampled ('
+    # Image Info
                     f'{DBCONST.IMG_FNAME} TEXT PRIMARY KEY,'
                     f'{DBCONST.IMG_ID} TEXT,'
-                    f'{DBCONST.IMG_STATUS} TEXT,'
-                    f'{DBCONST.USR_LBL} TEXT,'
                     f'{DBCONST.IMG_TSTAMP} TEXT,'
-                    f'{DBCONST.PRED} TEXT,'
+                    f'{DBCONST.IMG_DATE} TEXT,'
+                    f'{DBCONST.IMG_TIME} TEXT,'
                     f'{DBCONST.ORIENT} REAL,'
                     f'{DBCONST.MJR_LEN} REAL,'
                     f'{DBCONST.MIN_LEN} REAL,'
-                    f'{DBCONST.PROB} REAL,'
                     f'{DBCONST.HEIGHT} REAL,'
-                    f'{DBCONST.WIDTH} REAL)'
+                    f'{DBCONST.WIDTH} REAL,'
+                    f'{DBCONST.ASPT_RATIO} REAL,'
+                    f'{DBCONST.EST_VOL} REAL,'
+                    f'{DBCONST.AREA} REAL,'
+
+    # Machine Learning Info
+                    f'{DBCONST.MODEL_NAME} TEXT,'
+                    f'{DBCONST.USR_LBLS} TEXT,'
+                    f'{DBCONST.PRED} TEXT,'
+                    f'{DBCONST.PROB} REAL,'
+
+    # Annotation Info
+                    f'{DBCONST.IMG_STATUS} TEXT,'
+                    f'{DBCONST.IMG_TAG} TEXT,'
+                    f'{DBCONST.ML_LBL} BOOLEAN,'
+                    f'{DBCONST.HMN_LBL} BOOLEAN)'
 }
 
 insert_into_table_commands = {
-    '':''
+    'insert_images': ''' INSERT INTO date_sampled({}) VALUES({})'''.format(DBCONST().image_fields,
+                                                                           '?,' * len(DBCONST().image_fields))
 }
 
 class Environment():
