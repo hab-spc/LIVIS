@@ -206,7 +206,7 @@ def run(data_path, configuration):
 
     print("3. Exporting spreadsheet results...")
     df = pandas.DataFrame.from_dict(entry_list)
-    df.to_csv(os.path.join(subdir, 'features.tsv'), index=False, sep='\t')
+    df.to_csv(os.path.join(subdir, 'features.csv'), index=False, sep=',')
 
     # Insert into database
     print("4. Inserting into Database")
