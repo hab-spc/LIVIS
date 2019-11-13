@@ -7,14 +7,10 @@ class GenericConstants:
     DEV_ENV = 'dev_mac'
     PROD_ENV = 'prod_env'
     LIVIS = 'livis'
-    
-class PipelineConstants:
-    ROOT = '/data6/phytoplankton-db/hab_in_vitro'
-    MODEL_DIR = '/data6/plankton_test_db_new/model/20191023/00:51:01/'
-    
-
 
 class DBConstants:
+    date_table = 'date_sampled'
+
     pre = 'image_'
     # Image Info
     IMG_FNAME = pre + 'filename'
@@ -22,11 +18,14 @@ class DBConstants:
     IMG_TSTAMP = pre + 'timestamp'
     IMG_DATE = pre + 'date'
     IMG_TIME = pre + 'time'
+    IMG_FSIZE = pre + 'file_size'
+    ECCENTRICITY = pre + 'eccentricity'
     ORIENT = pre + 'orientation'
     MJR_LEN = pre + 'major_axis_length'
     MIN_LEN = pre + 'minor_axis_length'
     HEIGHT = pre + 'height'
     WIDTH = pre + 'width'
+    SOLIDITY = pre + 'solidity'
     ASPT_RATIO = pre + 'aspect_ratio'
     EST_VOL = pre + 'estimated_volume'
     AREA = pre + 'area'

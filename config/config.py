@@ -11,8 +11,8 @@ from constants.genericconstants import DBConstants as DBCONST
 from constants.genericconstants import GenericConstants as CONST
 
 # Module level constants
-DEFAULT_ENV = CONST.DEV_ENV # SVCL local environment
-DEFAULT_ENV = CONST.PROD_ENV # SPC Lab machine
+DEFAULT_ENV = CONST.DEV_ENV  # SVCL local environment
+DEFAULT_ENV = CONST.PROD_ENV  # SPC Lab machine
 PROJECT_DIR = Path(__file__).resolve().parents[1]
 
 create_table_commands = {
@@ -24,11 +24,14 @@ create_table_commands = {
                     f'{DBCONST.IMG_TSTAMP} TEXT,'
                     f'{DBCONST.IMG_DATE} TEXT,'
                     f'{DBCONST.IMG_TIME} TEXT,'
+                    f'{DBCONST.IMG_FSIZE} REAL,'
+                    f'{DBCONST.ECCENTRICITY} REAL,'
                     f'{DBCONST.ORIENT} REAL,'
                     f'{DBCONST.MJR_LEN} REAL,'
                     f'{DBCONST.MIN_LEN} REAL,'
                     f'{DBCONST.HEIGHT} REAL,'
                     f'{DBCONST.WIDTH} REAL,'
+                    f'{DBCONST.SOLIDITY} REAL,'
                     f'{DBCONST.ASPT_RATIO} REAL,'
                     f'{DBCONST.EST_VOL} REAL,'
                     f'{DBCONST.AREA} REAL,'
@@ -51,11 +54,13 @@ insert_into_table_commands = {
                                                                            '?,' * len(DBCONST().image_fields))
 }
 
+
 class Environment():
     """Sets up Environment Variables, given the DEFAULT ENV
     
     Set up all directory-related variables under here
     """
+
     def __init__(self, env_type=None):
         """Initializes Environment()
         
@@ -70,6 +75,7 @@ class Environment():
             self.models_dir = '/data6/plankton_test_db_new/model/20191023/00:51:01/'
             self.data_dir = os.path.join(PROJECT_DIR, 'images', '{}')
             self.hab_ml_main = os.path.join(PROJECT_DIR, 'hab_ml', '{}')
+
 
 class Config(Environment):
     """Default Configs for training and inference
@@ -86,11 +92,19 @@ class Config(Environment):
     NOTE: all path related configurations should be set up in the Environment() class above to avoid issues with developing on a person vs production environment.
 
     """
-    #logging
+    # logging
     log2file = False
-    
-    
-    
+    MergeSubDirs = False
+    ImagesPerDir = 1000
+    BayerPattern = "BG"
+    UseJpeg = True
+    SaveRawColor = True
+    PixelSize = 0.62
+    MinObjectArea = 100
+    ObjectsPerROI = 5
+    EdgeThreshold = 2.5
+    MinObjectArea = 100
+    Deconvolve = True
 
     def __init__(self, env_type):
         super().__init__(env_type)
@@ -116,6 +130,7 @@ class Config(Environment):
         return {k: getattr(self, k) for k, _ in Config.__dict__.items() \
                 if not k.startswith('_')}
 
+
 def set_config(**kwargs):
     """ Set configuration to train/test model
     Able to set configurations dynamically without changing fixed value
@@ -131,5 +146,6 @@ def set_config(**kwargs):
     """
     opt._parse(kwargs)
     return opt
+
 
 opt = Config(DEFAULT_ENV)
