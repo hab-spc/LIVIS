@@ -15,6 +15,11 @@ Project Organization
 Requirements
 -----------
  - Python 2.7 or 3.5
+ - Git
+```
+git clone <REPO>
+git submodule update --init --recursive
+```
  - Conda
  ``` bash
 $ pip install -r requirements.txt
