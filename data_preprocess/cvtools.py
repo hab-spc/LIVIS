@@ -12,20 +12,7 @@ from skimage import morphology, measure, restoration
 from skimage.filters import scharr, gaussian
 import numpy as np
 from scipy import ndimage
-
-
-class configuration:
-    MergeSubDirs = False
-    ImagesPerDir = 1000
-    BayerPattern = "BG"
-    UseJpeg = True
-    SaveRawColor = True
-    PixelSize = 0.62
-    MinObjectArea = 100
-    ObjectsPerROI = 5
-    EdgeThreshold = 2.5
-    MinObjectArea = 100
-    Deconvolve = True
+from config.config import opt
 
 
 def make_gaussian(size, fwhm=3, center=None):
@@ -71,21 +58,15 @@ def convert_to_8bit(img):
 
 
 # extract simple features and create a binary representation of the image
-def quick_features(img, config=configuration):
+def quick_features(img):
     """
     :param img: 8-bit array
     """
-    # Pull out some settings from config if available
-    if config:
-        min_obj_area = config.MinObjectArea
-        objs_per_roi = config.ObjectsPerROI
-        deconv = config.Deconvolve
-        edge_thresh = config.EdgeThreshold
-    else:
-        min_obj_area = 100
-        objs_per_roi = 1
-        deconv = False
-        edge_thresh = 2.5
+
+    min_obj_area = opt.MinObjectArea
+    objs_per_roi = opt.ObjectsPerROI
+    deconv = opt.Deconvolve
+    edge_thresh = opt.EdgeThreshold
 
     # Define an empty dictionary to hold all features
     features = {'rawcolor': np.copy(img)}

@@ -7,14 +7,10 @@ class GenericConstants:
     DEV_ENV = 'dev_mac'
     PROD_ENV = 'prod_env'
     LIVIS = 'livis'
-    
-class PipelineConstants:
-    ROOT = '/data6/phytoplankton-db/hab_in_vitro'
-    MODEL_DIR = '/data6/plankton_test_db_new/model/20191023/00:51:01/'
-    
-
 
 class DBConstants:
+    date_table = 'date_sampled'
+
     pre = 'image_'
     # Image Info
     IMG_FNAME = pre + 'filename'

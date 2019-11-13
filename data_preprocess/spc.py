@@ -21,8 +21,9 @@ from tqdm import tqdm
 # Third party imports
 
 # Project level imports
-import cvtools
+from data_preprocess import cvtools
 from constants.genericconstants import DBConstants as DBCONST
+from config.config import opt
 
 def process_image(bundle):
     image_path = bundle['image_path']
@@ -47,9 +48,9 @@ def process_image(bundle):
     img_c_8bit = cvtools.convert_to_8bit(image)
 
     # Compute the features of the Images
-    features = cvtools.quick_features(img_c_8bit, config = bundle['config'])
+    features = cvtools.quick_features(img_c_8bit)
 
-    image_res = configuration.PixelSize / 1000
+    image_res = opt.PixelSize / 1000
 
     # print("Image resolution is set to: {} mm/pixel.".format(str(image_res)))
 
@@ -84,7 +85,9 @@ def process_bundle_list(bundle_queue, output_queue):
             time.sleep(0.02 * np.random.rand())
 
 
-def insert_database(df, db_path="test.db", table_name='date_sampled'):
+def insert_database(df, db_path, table_name):
+
+    #TODO: Check if the table exists in the path
     try:
         conn = sqlite3.connect(db_path)
         print("\ta. Connected to Sqlite")
@@ -102,7 +105,7 @@ def insert_database(df, db_path="test.db", table_name='date_sampled'):
 
 
 # Process a directory of images
-def run(data_path, configuration):
+def run(data_path):
     print("Running SPC image conversion...")
 
     # get the base name of the directory with tif file
@@ -111,7 +114,7 @@ def run(data_path, configuration):
 
     # Combines all the Directories and puts in list
     image_list = []
-    if configuration.MergeSubDirs:
+    if opt.MergeSubDirs:
         sub_directory_list = sorted(glob.glob(os.path.join(data_path, "[0-9]" * 10)))
         for sub_directory in sub_directory_list:
             print("Listing sub directory " + sub_directory + "...")
@@ -141,11 +144,11 @@ def run(data_path, configuration):
     print("Starting image conversion...")
 
     # loop over the images and do the processing
-    images_per_dir = configuration.ImagesPerDir
+    images_per_dir = opt.ImagesPerDir
 
-    if configuration.BayerPattern.lower() == "rg":
+    if opt.BayerPattern.lower() == "rg":
         bayer_conv = cv2.COLOR_BAYER_RG2RGB
-    if configuration.BayerPattern.lower() == "bg":
+    if opt.BayerPattern.lower() == "bg":
         bayer_conv = cv2.COLOR_BAYER_BG2RGB
 
     print("\n1. Loading {} images.\m".format(str(total_images)))
@@ -161,8 +164,7 @@ def run(data_path, configuration):
 
         bundle = {'image_path': image,
                   'image': cvtools.import_image(os.path.dirname(image), filename, bayer_pattern=bayer_conv),
-                  'image_dir': absdir,
-                  'config': configuration}
+                  'image_dir': absdir}
         bundle_queue.put(bundle)
 
     # Get the number of proceess to use based on CPUs
@@ -180,8 +182,8 @@ def run(data_path, configuration):
     print("2. Processing Images...")
 
     entry_list = []
-    use_jpeg = configuration.UseJpeg
-    raw_color = configuration.SaveRawColor
+    use_jpeg = opt.UseJpeg
+    raw_color = opt.SaveRawColor
     images_processed = 0
 
     for counter in tqdm(range(total_images)) or images_processed <= total_images :
@@ -210,7 +212,7 @@ def run(data_path, configuration):
 
     # Insert into database
     print("4. Inserting into Database")
-    insert_database(df, db_path="test.db", table_name='date_sampled')
+    insert_database(df, db_path=opt.db_dir.format('test.db'), table_name=DBCONST.date_table)
     print("5. Done Processing.")
 
 
@@ -223,12 +225,9 @@ def batchprocess(data_path)
 
     multiprocessing.freeze_support()
 
-    # load the config object
-    configuration = cvtools.configuration()
-
     # If given directory is a single data directory, just process it
     if valid_image_dir(data_path):
-        run(data_path, configuration)
+        run(data_path)
         return
 
     # List data directories to be processed (Each in unixtime format)
@@ -242,4 +241,4 @@ def batchprocess(data_path)
     print('Processing each data directory...')
     for directory in directory_list:
         if os.path.isdir(directory):
-            run(directory, configuration)
+            run(directory)
