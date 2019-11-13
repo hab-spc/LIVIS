@@ -11,7 +11,8 @@ from constants.genericconstants import DBConstants as DBCONST
 from constants.genericconstants import GenericConstants as CONST
 
 # Module level constants
-DEFAULT_ENV = CONST.DEV_ENV
+DEFAULT_ENV = CONST.DEV_ENV # SVCL local environment
+DEFAULT_ENV = CONST.PROD_ENV # SPC Lab machine
 PROJECT_DIR = Path(__file__).resolve().parents[1]
 
 create_table_commands = {
@@ -51,13 +52,24 @@ insert_into_table_commands = {
 }
 
 class Environment():
+    """Sets up Environment Variables, given the DEFAULT ENV
+    
+    Set up all directory-related variables under here
+    """
     def __init__(self, env_type=None):
+        """Initializes Environment()
+        
+        Given the environment type (dev or prod), it sets up the model, data, and db direcotry related stuff. All variables need to be initialized with a string formatting so these are all RELATIVE PATHS
+        """
         if env_type == CONST.DEV_ENV:
-            self.models_dir = os.path.join(PROJECT_DIR, 'src/models')
-            self.data_dir = os.path.join(PROJECT_DIR, 'src/data')
+            self.models_dir = '/data6/plankton_test_db_new/model/20191023/00:51:01/'
+            self.data_dir = os.path.join(PROJECT_DIR, 'images', '{}')
+            self.hab_ml_main = os.path.join(PROJECT_DIR, 'hab_ml', '{}')
+            self.db_dir = os.path.join(PROJECT_DIR, 'DB', '{}')
         elif env_type == CONST.PROD_ENV:
-            self.models_dir = 'prod/models'
-            self.data_dir = 'prod/data'
+            self.models_dir = '/data6/plankton_test_db_new/model/20191023/00:51:01/'
+            self.data_dir = os.path.join(PROJECT_DIR, 'images', '{}')
+            self.hab_ml_main = os.path.join(PROJECT_DIR, 'hab_ml', '{}')
 
 class Config(Environment):
     """Default Configs for training and inference
@@ -70,15 +82,15 @@ class Config(Environment):
     main.py
         >> from config import opt
         >> lr = opt.lr
-    NOTE that, config items could be overwriten by passing
-    argument `set_config()`. e.g. --voc-data-dir='./data/'
-    """
-    # Training flags
-    log2file = False
-    print_freq = 50
-    save_freq = 2
+        
+    NOTE: all path related configurations should be set up in the Environment() class above to avoid issues with developing on a person vs production environment.
 
-    db_path = os.path.join(PROJECT_DIR, 'DB/livis.db')
+    """
+    #logging
+    log2file = False
+    
+    
+    
 
     def __init__(self, env_type):
         super().__init__(env_type)
