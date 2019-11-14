@@ -221,7 +221,7 @@ def valid_image_dir(test_path):
     return len(num_images) > 0
 
 
-def batchprocess(data_path)
+def batchprocess(data_path):
 
     multiprocessing.freeze_support()
 
