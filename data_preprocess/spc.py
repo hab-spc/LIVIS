@@ -91,7 +91,7 @@ def insert_database(df, db_path, table_name):
     try:
         conn = sqlite3.connect(db_path)
         print("\ta. Connected to Sqlite")
-        df.to_sql(name=table_name, con=conn, if_exists='replace')
+        df.to_sql(name=table_name, con=conn, if_exists='append', index=False)
         print("\tb. Inserted into Database")
         conn.commit()
         conn.close()
@@ -191,7 +191,8 @@ def run(data_path):
             output = output_queue.get()
             if output:
                 entry_list.append(output['entry'])
-                output_path = os.path.join(output['entry'][DBCONST.IMG_FNAME], output['entry'][DBCONST.IMG_ID])
+                #output_path = os.path.join(output['entry'][DBCONST.IMG_FNAME], output['entry'][DBCONST.IMG_ID])
+                output_path = output['entry'][DBCONST.IMG_FNAME][:-4]
                 extension = ".jpeg" if use_jpeg else ".png"
 
                 if raw_color:
@@ -208,6 +209,8 @@ def run(data_path):
 
     print("3. Exporting spreadsheet results...")
     df = pandas.DataFrame.from_dict(entry_list)
+    extension = ".jpeg" if use_jpeg else ".png"
+    df[DBCONST.IMG_FNAME] = df[DBCONST.IMG_FNAME].apply(lambda x: "{}{}".format(x[:-4],extension))
     df.to_csv(os.path.join(subdir, 'features.csv'), index=False, sep=',')
 
     # Insert into database

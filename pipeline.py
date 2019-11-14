@@ -5,6 +5,7 @@ import tarfile
 import glob
 import shutil
 import sys
+from pathlib import Path
 
 # Third party imports
 
@@ -30,9 +31,8 @@ class Pipeline():
 
     def predict(self, date):
         """Run model prediction"""
-        """Run model prediction"""
         hab_ml_main = opt.hab_ml_main.format('main.py')
-        data_dir = opt.data_dir.format(date)
+        data_dir = os.path.join(opt.data_dir.format(date),'00000')
         model_dir = opt.model_dir
         cmd = "python {} --mode deploy --batch_size 16 --deploy_data {} --model_dir {} --lab_config"
         cmd = cmd.format(hab_ml_main, data_dir, model_dir)
@@ -46,8 +46,9 @@ class Pipeline():
         """
 
         img_dir = opt.data_dir.format(date)
+        print(img_dir)
 
-        if not (os.path.isfile(img_dir)):
+        if not (os.path.isdir(img_dir)):
             print("Please input a directory of data directories, aborting.")
 
         else:

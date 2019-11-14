@@ -41,6 +41,7 @@ create_table_commands = {
                     f'{DBCONST.USR_LBLS} TEXT,'
                     f'{DBCONST.PRED} TEXT,'
                     f'{DBCONST.PROB} REAL,'
+                    f'{DBCONST.PRED_TSTAMP} TEXT,'
 
     # Annotation Info
                     f'{DBCONST.IMG_STATUS} TEXT,'
@@ -67,14 +68,15 @@ class Environment():
         Given the environment type (dev or prod), it sets up the model, data, and db direcotry related stuff. All variables need to be initialized with a string formatting so these are all RELATIVE PATHS
         """
         if env_type == CONST.DEV_ENV:
-            self.models_dir = '/data6/plankton_test_db_new/model/20191023/00:51:01/'
+            self.model_dir = '/data6/plankton_test_db_new/model/20191023/00:51:01/'
             self.data_dir = os.path.join(PROJECT_DIR, 'images', '{}')
             self.hab_ml_main = os.path.join(PROJECT_DIR, 'hab_ml', '{}')
             self.db_dir = os.path.join(PROJECT_DIR, 'DB', '{}')
         elif env_type == CONST.PROD_ENV:
-            self.models_dir = '/data6/plankton_test_db_new/model/20191023/00:51:01/'
+            self.model_dir = '/data6/plankton_test_db_new/model/20191023/00:51:01/'
             self.data_dir = os.path.join(PROJECT_DIR, 'images', '{}')
             self.hab_ml_main = os.path.join(PROJECT_DIR, 'hab_ml', '{}')
+            self.db_dir = os.path.join(PROJECT_DIR, 'DB', '{}')
 
 
 class Config(Environment):
