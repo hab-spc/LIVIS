@@ -7,3 +7,9 @@
 [submodule "hab_ml"]
 	path = hab_ml
 	url = https://github.com/hab-spc/hab-ml.git
+[submodule "hab_service"]
+	path = hab_service
+	url = https://github.com/hab-spc/hab_service
+[submodule "hab-viewer"]
+	path = hab-viewer
+	url = https://github.com/hab-spc/hab-viewer
