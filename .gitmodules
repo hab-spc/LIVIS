@@ -1,6 +1,9 @@
 [submodule "LIVIS_automate/SPCConvert"]
 	path = LIVIS_automate/SPCConvert
 	url = https://github.com/hab-spc/SPCConvert.git
-[submodule "LIVIS_automate/hab-ml"]
-	path = LIVIS_automate/hab-ml
+[submodule "hab-ml"]
+	path = hab-ml
+	url = https://github.com/hab-spc/hab-ml.git
+[submodule "hab_ml"]
+	path = hab_ml
 	url = https://github.com/hab-spc/hab-ml.git
