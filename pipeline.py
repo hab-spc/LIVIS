@@ -86,8 +86,7 @@ class Pipeline():
     def run_app(self):
         #TODO @Kush
         #Run the code to activate your application. If shell command, use os.system(cmd)
-        pass
-    
+        cmd = "cd hab-viewer yarn start & cd ../hab_service yarn start"
 
 #Main 
 if __name__ == '__main__':

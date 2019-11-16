@@ -20,13 +20,13 @@ import click
 from config.config import opt, create_table_commands
 
 # Module Level Constants
-DB_PATH = opt.db_path
+DB_DIR = opt.db_dir
 CREATE_CMD = create_table_commands
 
 @click.command()
 @click.option('--db_path', default=None, help='DB Path to create.')
 def create_db(db_path):
-    db_path = db_path if db_path else DB_PATH
+    db_path = db_path if db_path else DB_DIR
     if not os.path.exists(db_path):
         db = Database(db_path)
         db.execute(operation='create new table', query=CREATE_CMD['date_sampled'])

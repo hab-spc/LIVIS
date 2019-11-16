@@ -35,7 +35,7 @@ source_path="$(ls -td -- $samba_data_dir | head -1)"
 #source_path=/Volumes/data/1558641021/ #DEBUG purposes
 
 # Prepare remote data storage location
-ssh_key="plankton@gpu2"
+ssh_key="plankton@gpu3"
 svcl_dir="/data6/phytoplankton-db/hab_in_vitro"
 img_dir="$svcl_dir/images/$date"
 dest_path="$ssh_key:$img_dir"
