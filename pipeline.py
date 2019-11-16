@@ -1,10 +1,7 @@
 """Pipeline Initialization for HAB-ML on Lab Deployment"""
 # Standard dist imports
 import argparse
-import glob
 import os
-import shutil
-import tarfile
 
 # Project level imports
 from config.config import opt
@@ -16,13 +13,19 @@ from data_preprocess.spc import batchprocess
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--date', type=str, help='Format: YYYYMMDD')
+parser.add_argument('--run_app', action='store_true', help='Run annotation tool')
 args = parser.parse_args()
 
 
-def main(date):
-    pip = Pipeline()
-    pip.process(date)
-    pip.predict(date)
+def main(date=None, run_app=None):
+    if date:
+        pip = Pipeline()
+        pip.process(date)
+        pip.predict(date)
+
+    if run_app:
+        pip = Pipeline()
+        pip.run_app()
 
 class Pipeline():
     """Pipeline Instance for HAB-ML
@@ -55,6 +58,7 @@ class Pipeline():
 
         img_dir = opt.data_dir.format(date)
         print(img_dir)
+        print("KEVINS TEST")
 
         if not (os.path.isdir(img_dir)):
             print("Please input a directory of data directories, aborting.")
@@ -62,17 +66,17 @@ class Pipeline():
         else:
             # Step 1
             # Uncompress all tar files and join into one folder
-            print("Uncompressing tar files")
-            extracted_path = os.path.join(img_dir, '00000')
-            for file in os.path.join(img_dir, glob.glob('*.tar')):
-                with tarfile.open(file) as archive:
-                    archive.extractall(path=extracted_path)
-                    os.remove(file)
-            img_dir = extracted_path
-
-            os.mkdir(os.path.join(img_dir, '00000'))
-            for file in os.path.join(img_dir, '00000', glob.glob('*')):
-                shutil.copy(os.path.join(file, glob.glob('*')), os.path.join(img_dir, '00000'))
+            # print("Uncompressing tar files")
+            # extracted_path = os.path.join(img_dir, '00000')
+            # for file in os.path.join(img_dir, glob.glob('*.tar')):
+            #     with tarfile.open(file) as archive:
+            #         archive.extractall(path=extracted_path)
+            #         os.remove(file)
+            # img_dir = extracted_path
+            #
+            # os.mkdir(os.path.join(img_dir, '00000'))
+            # for file in os.path.join(img_dir, '00000', glob.glob('*')):
+            #     shutil.copy(os.path.join(file, glob.glob('*')), os.path.join(img_dir, '00000'))
 
             # Step 2
             # Convert images using batchprocess in SPC
@@ -83,11 +87,14 @@ class Pipeline():
         # TODO @SuryaKrishnan
         pass
 
-    def run_app(self):
+    @staticmethod
+    def run_app():
         #TODO @Kush
         #Run the code to activate your application. If shell command, use os.system(cmd)
-        cmd = "cd hab-viewer yarn start & cd ../hab_service yarn start"
+        cmd = "cd hab-viewer && npm start & cd hab_service & npm start"
+        os.system(cmd)
+
 
 #Main 
 if __name__ == '__main__':
-    main(args.date)
+    main(date=args.date, run_app=args.run_app)
