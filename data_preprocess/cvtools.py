@@ -120,6 +120,7 @@ def quick_features(img):
 
     else:
         # Save simple features of the object
+        bw_img_all = label_img.copy()
         features['area'] = 0.0
         features['minor_axis_length'] = 0.0
         features['major_axis_length'] = 0.0

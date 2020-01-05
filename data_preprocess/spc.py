@@ -12,9 +12,7 @@ import glob
 import time
 import datetime
 import math
-import logging
-import multiprocessing
-from multiprocessing import Process, Queue, JoinableQueue, Lock
+from multiprocessing import Process, Queue
 import multiprocessing
 import numpy as np
 import pandas
@@ -27,6 +25,31 @@ from tqdm import tqdm
 from data_preprocess import cvtools
 from constants.genericconstants import DBConstants as DBCONST
 from config.config import opt
+
+
+def write_data(output, raw_color, use_jpeg):
+    # output_path = os.path.join(output['entry'][DBCONST.IMG_FNAME], output['entry'][DBCONST.IMG_ID])
+    output_path = output['entry'][DBCONST.IMG_FNAME][:-4]
+    extension = ".jpeg" if use_jpeg else ".png"
+
+    if raw_color:
+        cv2.imwrite(os.path.join(output_path + "_rawcolor" + extension), output['features']['rawcolor'])
+    cv2.imwrite(os.path.join(output_path + extension), output['features']['image'])
+    cv2.imwrite(os.path.join(output_path + "_binary.png"), output['features']['binary'])
+
+
+def load_data(index, image, image_dir, images_per_dir, bayer_conv):
+    absdir = os.path.join(image_dir, str(images_per_dir * int(index / images_per_dir)).zfill(5))
+
+    filename = os.path.basename(image)
+
+    if not os.path.exists(absdir):
+        os.makedirs(absdir)
+
+    bundle = {'image_path': image,
+              'image': cvtools.import_image(os.path.dirname(image), filename, bayer_pattern=bayer_conv),
+              'image_dir': absdir}
+    return bundle
 
 def process_image(bundle):
     image_path = bundle['image_path']
@@ -78,45 +101,14 @@ def process_image(bundle):
     return output
 
 
-class Consumer(Process):
-
-    def __init__(self, task_queue, result_queue):
-        p = Process.__init__(self)
-        self.task_queue = task_queue
-        self.result_queue = result_queue
-
-    def run(self):
-        proc_name = self.name
-        while True:
-            next_task = self.task_queue.get()
-            if next_task is None:
-                # Poison pill means shutdown
-                print('%s: Exiting' % os.getpid())
-                self.task_queue.task_done()
-                break
-            self.task_queue.task_done()
-            self.result_queue.put(next_task)
-        return
-
 # threaded function for each process to call
 # queues are used to sync processes
-def process_bundle_list(bundle_queue, output_queue, lock):
+def process_bundle_list(bundle_queue, output_queue):
     while True:
         try:
-            # output_queue.put(process_image(bundle_queue.get()))
-            next_task = bundle_queue.get()
-            if next_task is None:
-                # poison pill means shutdown
-                bundle_queue.task_done()
-                break
-            else:
-                next_task = process_image(next_task)
-            bundle_queue.task_done()
-            output_queue.put(next_task)
+            output_queue.put(process_image(bundle_queue.get()))
         except:
-            # print('endless loop...     \r', end='')
             time.sleep(0.02 * np.random.rand())
-    return
 
 
 def insert_database(df, db_path, table_name):
@@ -138,7 +130,6 @@ def insert_database(df, db_path, table_name):
             print("\tc. Sqlite connection is closed")
 
 
-# Process a directory of images
 def run(data_path):
     print("Running SPC image conversion...")
 
@@ -163,9 +154,6 @@ def run(data_path):
         print("No images were found. skipping this directory.")
         return
 
-    # Get the total number of images in the directory
-    total_images = len(image_list)
-
     # Create the output directories for the images
     subdir = os.path.join(data_path, '..', base_dir_name + '_processed')
     print(subdir)
@@ -185,94 +173,140 @@ def run(data_path):
     if opt.BayerPattern.lower() == "bg":
         bayer_conv = cv2.COLOR_BAYER_BG2RGB
 
-    print("\n1. Loading {} images.\m".format(str(total_images)))
-    bundle_queue = JoinableQueue()
-
-    # Get the number of proceess to use based on CPUs
-    n_threads = max(multiprocessing.cpu_count() - 1, 1)
-    print(f'Creating {n_threads} threads')
-
-    # Create the set of processes and start them
-    output_queue = Queue()
-    processes = []
-    multiprocessing.log_to_stderr()
-    logger = multiprocessing.get_logger()
-    logger.setLevel(logging.DEBUG)
-    lock = Lock()
-    # consumers = [Consumer(bundle_queue, output_queue) for i in range(n_threads)]
-    # for w in consumers:
-    #     w.start()
-    for i in range(0, n_threads):
-        p = Process(target=process_bundle_list, args=(bundle_queue, output_queue, lock))
-        p.daemon = True
-        p.start()
-        processes.append(p)
-
-    for index, image in enumerate(tqdm(image_list)):
-
-        absdir = os.path.join(image_dir, str(images_per_dir * int(index / images_per_dir)).zfill(5))
-
-        filename = os.path.basename(image)
-
-        if not os.path.exists(absdir):
-            os.makedirs(absdir)
-
-        bundle = {'image_path': image,
-                  'image': cvtools.import_image(os.path.dirname(image), filename, bayer_pattern=bayer_conv),
-                  'image_dir': absdir}
-        bundle_queue.put(bundle)
-
-    # Add poison pill for each thread
-    print('Adding poison pill')
-    for i in range(0, n_threads):
-        bundle_queue.put(None)
-
-    # Wait for all tasks to finish
-    print('Waiting for tasks to finish')
-    for i,p in enumerate(processes):
-        print(i, p.name)
-        p.join()
-    # bundle_queue.join()
-
-    # Monitor processing of the images and save processed images to disk as they become available
-    print("2. Processing Images...")
-
     entry_list = []
     use_jpeg = opt.UseJpeg
     raw_color = opt.SaveRawColor
-    images_processed = 0
 
-    for counter in tqdm(range(total_images)) or images_processed <= total_images :
-        try:
-            output = output_queue.get()
-            if output:
-                entry_list.append(output['entry'])
-                #output_path = os.path.join(output['entry'][DBCONST.IMG_FNAME], output['entry'][DBCONST.IMG_ID])
-                output_path = output['entry'][DBCONST.IMG_FNAME][:-4]
-                extension = ".jpeg" if use_jpeg else ".png"
+    for index, image in enumerate(tqdm(image_list)):
+        bundle = load_data(index, image, image_dir, images_per_dir, bayer_conv)
+        output = process_image(bundle)
+        entry_list.append(output['entry'])
+        write_data(output, raw_color=raw_color, use_jpeg=use_jpeg)
 
-                if raw_color:
-                    cv2.imwrite(os.path.join(output_path + "_rawcolor" + extension), output['features']['rawcolor'])
-                cv2.imwrite(os.path.join(output_path + extension), output['features']['image'])
-                cv2.imwrite(os.path.join(output_path + "_binary.png"), output['features']['binary'])
-                images_processed = images_processed+1
-        except:
-            time.sleep(0.05)
-
-    # Terminate the processes in case they are stuck
-    for p in processes:
-        p.terminate()
-
-    print("3. Exporting spreadsheet results...")
+    print("Exporting spreadsheet results...")
     df = pandas.DataFrame.from_dict(entry_list)
     extension = ".jpeg" if use_jpeg else ".png"
-    df[DBCONST.IMG_FNAME] = df[DBCONST.IMG_FNAME].apply(lambda x: "{}{}".format(x[:-4],extension))
+    df[DBCONST.IMG_FNAME] = df[DBCONST.IMG_FNAME].apply(lambda x: "{}{}".format(x[:-4], extension))
     df.to_csv(os.path.join(subdir, 'features.csv'), index=False, sep=',')
 
     # Insert into database
-    print("4. Inserting into Database")
+    print("Inserting into Database")
     insert_database(df, db_path=opt.db_dir.format('test.db'), table_name=DBCONST.date_table)
-    print("5. Done Processing.")
+    print("Done Processing.")
+
+# Process a directory of images
+# def run(data_path):
+#     print("Running SPC image conversion...")
+#
+#     # get the base name of the directory with tif file
+#     base_dir_name = os.path.basename(os.path.abspath(data_path))
+#     print("\nListing directory " + base_dir_name + "...")
+#
+#     # Combines all the Directories and puts in list
+#     image_list = []
+#     if opt.MergeSubDirs:
+#         sub_directory_list = sorted(glob.glob(os.path.join(data_path, "[0-9]" * 10)))
+#         for sub_directory in sub_directory_list:
+#             print("Listing sub directory " + sub_directory + "...")
+#             image_list += glob.glob(os.path.join(sub_directory, "*.tif"))
+#     else:
+#         image_list += glob.glob(os.path.join(data_path, "*.tif"))
+#
+#     image_list = sorted(image_list)
+#
+#     # Return if no images are found
+#     if len(image_list) == 0:
+#         print("No images were found. skipping this directory.")
+#         return
+#
+#     # Get the total number of images in the directory
+#     total_images = len(image_list)
+#
+#     # Create the output directories for the images
+#     subdir = os.path.join(data_path, '..', base_dir_name + '_processed')
+#     print(subdir)
+#     if not os.path.exists(subdir):
+#         os.makedirs(subdir)
+#     image_dir = os.path.join(subdir, 'images')
+#     if not os.path.exists(image_dir):
+#         os.makedirs(image_dir)
+#
+#     print("Starting image conversion...")
+#
+#     # loop over the images and do the processing
+#     images_per_dir = opt.ImagesPerDir
+#
+#     if opt.BayerPattern.lower() == "rg":
+#         bayer_conv = cv2.COLOR_BAYER_RG2RGB
+#     if opt.BayerPattern.lower() == "bg":
+#         bayer_conv = cv2.COLOR_BAYER_BG2RGB
+#
+#     print("\n1. Loading {} images.\m".format(str(total_images)))
+#     bundle_queue = Queue()
+#     for index, image in enumerate(tqdm(image_list)):
+#
+#         absdir = os.path.join(image_dir, str(images_per_dir * int(index / images_per_dir)).zfill(5))
+#
+#         filename = os.path.basename(image)
+#
+#         if not os.path.exists(absdir):
+#             os.makedirs(absdir)
+#
+#         bundle = {'image_path': image,
+#                   'image': cvtools.import_image(os.path.dirname(image), filename, bayer_pattern=bayer_conv),
+#                   'image_dir': absdir}
+#         bundle_queue.put(bundle)
+#
+#     # Get the number of proceess to use based on CPUs
+#     n_threads = max(multiprocessing.cpu_count() - 1, 1)
+#
+#     # Create the set of processes and start them
+#     output_queue = Queue()
+#     processes = []
+#     for i in range(0, n_threads):
+#         p = Process(target=process_bundle_list, args=(bundle_queue, output_queue))
+#         p.start()
+#         processes.append(p)
+#
+#     # Monitor processing of the images and save processed images to disk as they become available
+#     print("2. Processing Images...")
+#
+#     entry_list = []
+#     use_jpeg = opt.UseJpeg
+#     raw_color = opt.SaveRawColor
+#     images_processed = 0
+#
+#     for counter in tqdm(range(total_images)) or images_processed <= total_images :
+#         try:
+#             output = output_queue.get()
+#             if output:
+#                 entry_list.append(output['entry'])
+#                 #output_path = os.path.join(output['entry'][DBCONST.IMG_FNAME], output['entry'][DBCONST.IMG_ID])
+#                 output_path = output['entry'][DBCONST.IMG_FNAME][:-4]
+#                 extension = ".jpeg" if use_jpeg else ".png"
+#
+#                 if raw_color:
+#                     cv2.imwrite(os.path.join(output_path + "_rawcolor" + extension), output['features']['rawcolor'])
+#                 cv2.imwrite(os.path.join(output_path + extension), output['features']['image'])
+#                 cv2.imwrite(os.path.join(output_path + "_binary.png"), output['features']['binary'])
+#                 images_processed = images_processed+1
+#         except:
+#             time.sleep(0.05)
+#
+#     # Terminate the processes in case they are stuck
+#     for p in processes:
+#         p.terminate()
+#
+#     print("3. Exporting spreadsheet results...")
+#     df = pandas.DataFrame.from_dict(entry_list)
+#     extension = ".jpeg" if use_jpeg else ".png"
+#     df[DBCONST.IMG_FNAME] = df[DBCONST.IMG_FNAME].apply(lambda x: "{}{}".format(x[:-4],extension))
+#     df.to_csv(os.path.join(subdir, 'features.csv'), index=False, sep=',')
+#
+#     # Insert into database
+#     print("4. Inserting into Database")
+#     insert_database(df, db_path=opt.db_dir.format('test.db'), table_name=DBCONST.date_table)
+#     print("5. Done Processing.")
 
 
 def valid_image_dir(test_path):
@@ -283,6 +317,7 @@ def valid_image_dir(test_path):
 def batchprocess(data_path):
 
     multiprocessing.freeze_support()
+
     # If given directory is a single data directory, just process it
     if valid_image_dir(data_path):
         run(data_path)
