@@ -3,6 +3,7 @@ Filename: spc.py
 Authors: Taruj
 Description: Takes an image directory and processes a SPC images
 """
+from __future__ import print_function, division
 
 # Standard dist imports
 import cv2
@@ -11,7 +12,9 @@ import glob
 import time
 import datetime
 import math
-from multiprocessing import Process, Queue
+import logging
+import multiprocessing
+from multiprocessing import Process, Queue, JoinableQueue, Lock
 import multiprocessing
 import numpy as np
 import pandas
@@ -75,14 +78,45 @@ def process_image(bundle):
     return output
 
 
+class Consumer(Process):
+
+    def __init__(self, task_queue, result_queue):
+        p = Process.__init__(self)
+        self.task_queue = task_queue
+        self.result_queue = result_queue
+
+    def run(self):
+        proc_name = self.name
+        while True:
+            next_task = self.task_queue.get()
+            if next_task is None:
+                # Poison pill means shutdown
+                print('%s: Exiting' % os.getpid())
+                self.task_queue.task_done()
+                break
+            self.task_queue.task_done()
+            self.result_queue.put(next_task)
+        return
+
 # threaded function for each process to call
 # queues are used to sync processes
-def process_bundle_list(bundle_queue, output_queue):
+def process_bundle_list(bundle_queue, output_queue, lock):
     while True:
         try:
-            output_queue.put(process_image(bundle_queue.get()))
+            # output_queue.put(process_image(bundle_queue.get()))
+            next_task = bundle_queue.get()
+            if next_task is None:
+                # poison pill means shutdown
+                bundle_queue.task_done()
+                break
+            else:
+                next_task = process_image(next_task)
+            bundle_queue.task_done()
+            output_queue.put(next_task)
         except:
+            # print('endless loop...     \r', end='')
             time.sleep(0.02 * np.random.rand())
+    return
 
 
 def insert_database(df, db_path, table_name):
@@ -152,7 +186,28 @@ def run(data_path):
         bayer_conv = cv2.COLOR_BAYER_BG2RGB
 
     print("\n1. Loading {} images.\m".format(str(total_images)))
-    bundle_queue = Queue()
+    bundle_queue = JoinableQueue()
+
+    # Get the number of proceess to use based on CPUs
+    n_threads = max(multiprocessing.cpu_count() - 1, 1)
+    print(f'Creating {n_threads} threads')
+
+    # Create the set of processes and start them
+    output_queue = Queue()
+    processes = []
+    multiprocessing.log_to_stderr()
+    logger = multiprocessing.get_logger()
+    logger.setLevel(logging.DEBUG)
+    lock = Lock()
+    # consumers = [Consumer(bundle_queue, output_queue) for i in range(n_threads)]
+    # for w in consumers:
+    #     w.start()
+    for i in range(0, n_threads):
+        p = Process(target=process_bundle_list, args=(bundle_queue, output_queue, lock))
+        p.daemon = True
+        p.start()
+        processes.append(p)
+
     for index, image in enumerate(tqdm(image_list)):
 
         absdir = os.path.join(image_dir, str(images_per_dir * int(index / images_per_dir)).zfill(5))
@@ -167,16 +222,17 @@ def run(data_path):
                   'image_dir': absdir}
         bundle_queue.put(bundle)
 
-    # Get the number of proceess to use based on CPUs
-    n_threads = max(multiprocessing.cpu_count() - 1, 1)
-
-    # Create the set of processes and start them
-    output_queue = Queue()
-    processes = []
+    # Add poison pill for each thread
+    print('Adding poison pill')
     for i in range(0, n_threads):
-        p = Process(target=process_bundle_list, args=(bundle_queue, output_queue))
-        p.start()
-        processes.append(p)
+        bundle_queue.put(None)
+
+    # Wait for all tasks to finish
+    print('Waiting for tasks to finish')
+    for i,p in enumerate(processes):
+        print(i, p.name)
+        p.join()
+    # bundle_queue.join()
 
     # Monitor processing of the images and save processed images to disk as they become available
     print("2. Processing Images...")
@@ -227,7 +283,6 @@ def valid_image_dir(test_path):
 def batchprocess(data_path):
 
     multiprocessing.freeze_support()
-
     # If given directory is a single data directory, just process it
     if valid_image_dir(data_path):
         run(data_path)

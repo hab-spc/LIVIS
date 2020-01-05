@@ -58,7 +58,6 @@ class Pipeline():
 
         img_dir = opt.data_dir.format(date)
         print(img_dir)
-        print("KEVINS TEST")
 
         if not (os.path.isdir(img_dir)):
             print("Please input a directory of data directories, aborting.")

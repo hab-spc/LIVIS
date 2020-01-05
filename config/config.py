@@ -50,10 +50,10 @@ create_table_commands = {
                     f'{DBCONST.HMN_LBL} BOOLEAN)'
 }
 
-insert_into_table_commands = {
-    'insert_images': ''' INSERT INTO date_sampled({}) VALUES({})'''.format(DBCONST().image_fields,
-                                                                           '?,' * len(DBCONST().image_fields))
-}
+# insert_into_table_commands = {
+#     'insert_images': ''' INSERT INTO date_sampled({}) VALUES({})'''.format(DBCONST().image_fields,
+#                                                                            '?,' * len(DBCONST().image_fields))
+# }
 
 
 class Environment():

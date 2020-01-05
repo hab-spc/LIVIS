@@ -63,7 +63,7 @@ then
     activate_env="source activate hab_env"
     deploy="python pipeline.py --date $date"
     echo Deploying classification
-    ssh plankton@gpu2 "$cd_dir;$activate_env;$deploy"
+    ssh plankton@gpu3 "$cd_dir;$activate_env;$deploy"
 fi
 
 read -p "Run LIVIS Annotation? [y/n]: " -n 1 -r
@@ -74,5 +74,5 @@ then
     activate_env="source activate hab_env"
     deploy="python pipeline.py --run_app"
     echo Starting Annotation tool
-    ssh plankton@gpu2 "$cd_dir;$activate_env;$deploy"
+    ssh plankton@gpu3 "$cd_dir;$activate_env;$deploy"
 fi
