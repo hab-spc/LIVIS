@@ -180,8 +180,9 @@ def run(data_path):
     for index, image in enumerate(tqdm(image_list)):
         bundle = load_data(index, image, image_dir, images_per_dir, bayer_conv)
         output = process_image(bundle)
-        entry_list.append(output['entry'])
-        write_data(output, raw_color=raw_color, use_jpeg=use_jpeg)
+        if output:
+            entry_list.append(output['entry'])
+            write_data(output, raw_color=raw_color, use_jpeg=use_jpeg)
 
     print("Exporting spreadsheet results...")
     df = pandas.DataFrame.from_dict(entry_list)

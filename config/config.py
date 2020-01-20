@@ -55,6 +55,12 @@ create_table_commands = {
 #                                                                            '?,' * len(DBCONST().image_fields))
 # }
 
+select_from_table_commands = {
+    "select_images": '''SELECT * FROM date_sampled WHERE image_date="{}"''',
+    "select_images_filtered_size": '''SELECT * FROM date_sampled WHERE image_date="{}" 
+    and image_major_axis_length <=0.1 and image_major_axis_length >=0.03'''
+}
+
 
 class Environment():
     """Sets up Environment Variables, given the DEFAULT ENV
@@ -72,11 +78,13 @@ class Environment():
             self.data_dir = os.path.join(PROJECT_DIR, 'images', '{}')
             self.hab_ml_main = os.path.join(PROJECT_DIR, 'hab_ml', '{}')
             self.db_dir = os.path.join(PROJECT_DIR, 'DB', '{}')
+            self.meta_dir = '/data6/phytoplankton-db/csv'
         elif env_type == CONST.PROD_ENV:
             self.model_dir = '/data6/plankton_test_db_new/model/20191023/00:51:01/'
             self.data_dir = os.path.join(PROJECT_DIR, 'images', '{}')
             self.hab_ml_main = os.path.join(PROJECT_DIR, 'hab_ml', '{}')
             self.db_dir = os.path.join(PROJECT_DIR, 'DB', '{}')
+            self.meta_dir = '/data6/phytoplankton-db/csv'
 
 
 class Config(Environment):

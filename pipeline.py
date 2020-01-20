@@ -1,23 +1,26 @@
 """Pipeline Initialization for HAB-ML on Lab Deployment"""
 # Standard dist imports
 import argparse
+from datetime import datetime
+import logging
 import os
 
 # Project level imports
 from config.config import opt
+from constants.genericconstants import DBConstants as DBCONST
 from data_preprocess.spc import batchprocess
+from database.db_util import pull_data
+from hab_ml.utils.constants import Constants as MLCONST
 
 # Third party imports
 
 # Module level constants
 
-parser = argparse.ArgumentParser()
-parser.add_argument('--date', type=str, help='Format: YYYYMMDD')
-parser.add_argument('--run_app', action='store_true', help='Run annotation tool')
-args = parser.parse_args()
+def main(date=None, filtered_pull=False, run_app=None):
+    if filtered_pull and date:
+        pip = Pipeline()
+        pip.filtered_pull(date=date)
 
-
-def main(date=None, run_app=None):
     if date:
         pip = Pipeline()
         pip.process(date)
@@ -40,13 +43,13 @@ class Pipeline():
     def __init__(self):
         pass
 
-    def predict(self, date):
+    def predict(self, date, gpu=0):
         """Run model prediction"""
         hab_ml_main = opt.hab_ml_main.format('main.py')
         data_dir = os.path.join(opt.data_dir.format(date),'00000')
         model_dir = opt.model_dir
-        cmd = "python {} --mode deploy --batch_size 16 --deploy_data {} --model_dir {} --lab_config"
-        cmd = cmd.format(hab_ml_main, data_dir, model_dir)
+        cmd = "CUDA_VISIBLE_DEVICES={} python {} --mode deploy --batch_size 16 --deploy_data {} --model_dir {} --lab_config --log2file"
+        cmd = cmd.format(gpu, hab_ml_main, data_dir, model_dir)
         os.system(cmd)
 
     def process(self, date):
@@ -81,10 +84,27 @@ class Pipeline():
             # Convert images using batchprocess in SPC
             batchprocess(os.path.join(img_dir, '00000'))
 
-    def update(self):
-        """Update the database with the predictions"""
-        # TODO @SuryaKrishnan
-        pass
+    def filtered_pull(self, date, hab_eval=True):
+        logger = logging.getLogger('filtered_pull')
+        csv_fname = os.path.join(opt.meta_dir, f'hab_in_vitro_{date}.csv')
+
+        try:
+            expected_fmt = '%Y%m%d'
+            image_date  = datetime.strptime(date, expected_fmt).strftime('%Y-%m-%d')
+        except:
+            raise ValueError(f"time data '{date}' does not match format '{expected_fmt}'")
+
+        data = pull_data(image_date=image_date, filtered_size=True, save=False)
+        if hab_eval:
+            data = Pipeline()._reformat_lab_data(data)
+        data.to_csv(csv_fname, index=False)
+        logger.info(f'Saved dataset as {csv_fname}')
+
+    @staticmethod
+    def _reformat_lab_data(data):
+        df = data.copy()
+        df = df.rename(columns={DBCONST.IMG_FNAME:MLCONST.IMG,
+                                DBCONST.USR_LBLS: MLCONST.LABEL}, axis=1)
 
     @staticmethod
     def run_app():
@@ -96,4 +116,10 @@ class Pipeline():
 
 #Main 
 if __name__ == '__main__':
-    main(date=args.date, run_app=args.run_app)
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--date', type=str, help='Format: YYYYMMDD')
+    parser.add_argument('--run_app', action='store_true', help='Run annotation tool')
+    parser.add_argument('--filtered_pull', action='store_true', help='Pull data')
+    args = parser.parse_args()
+
+    main(date=args.date, filtered_pull=args.filtered_pull, run_app=args.run_app)

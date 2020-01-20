@@ -5,6 +5,8 @@ Description: CRUD functions to interact with the database
 """
 
 # imports
+from datetime import datetime
+import logging
 import os
 import sqlite3
 import sys
@@ -15,13 +17,17 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]) + '/')
 
 # Third party imports
 import click
+import pandas as pd
 
 # Project level imports
-from config.config import opt, create_table_commands
+from config.config import opt, create_table_commands, select_from_table_commands
+from constants.genericconstants import DBConstants as DBCONST
+from hab_ml.utils.logger import Logger
 
 # Module Level Constants
 DB_DIR = opt.db_dir
 CREATE_CMD = create_table_commands
+SELECT_CMD = select_from_table_commands
 
 @click.command()
 @click.option('--db_path', default=None, help='DB Path to create.')
@@ -33,6 +39,41 @@ def create_db(db_path):
         print('SUCCESS: TABLE CREATED')
     else:
         print("FAILED: TABLE ALREADY CREATED")
+
+@click.command()
+@click.option('--image_date', default=None, required=True, help='Image date')
+@click.option('--filtered_size', is_flag=True, default=False, help='Flag for filtered size range')
+@click.option('--save', is_flag=True, default=False, help='Save meta csv data')
+def pull_data(image_date, filtered_size, save, db_path=opt.db_dir.format('test.db')):
+    fname = f'hab_in_vitro_{image_date}'
+    log_fname = os.path.join(opt.meta_dir, fname + '.log')
+    Logger(log_fname, logging.INFO, False)
+    logger = logging.getLogger('pull_data')
+    Logger.section_break(title='LIVIS')
+    db = Database(db_path)
+
+    try:
+        expected_fmt = '%Y%m%d'
+        # convert date formatting for sql table
+        date = datetime.strptime(image_date, expected_fmt).strftime('%Y-%m-%d')
+    except:
+        raise ValueError(f"time data '{date}' does not match format '{expected_fmt}'")
+
+    # Access sql database
+    size_suffix = '_filtered_size' if filtered_size else ''
+    query = SELECT_CMD["select_images"+size_suffix].format(date)
+    df = pd.read_sql(query, db.conn)
+    logger.info('SUCCESS: meta file generated')
+    logger.info(f'Dates pulled: {date}')
+    logger.info(f'Dataset size: {df.shape[0]}')
+    logger.info(f'Filtered size range (0.03-0.1): {filtered_size}')
+    logger.info(f'Label Distribution\n{"-"*30}\n{df[DBCONST.USR_LBLS].value_counts()}')
+
+    if save:
+        csv_fname = os.path.join(opt.meta_dir, fname + '.csv')
+        df.to_csv(csv_fname, index=False)
+        logger.info(f'Saved dataset as {csv_fname}')
+    return df
 
 class Database:
     """ Database instance for CRUD interaction
@@ -162,4 +203,5 @@ class Database:
         self.execute("delete", query)
 
 if __name__ == '__main__':
-    create_db()
+    # create_db()
+    pull_data()
