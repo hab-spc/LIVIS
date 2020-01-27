@@ -21,12 +21,12 @@ def main(date=None, filtered_pull=False, run_app=None):
         pip = Pipeline()
         pip.filtered_pull(date=date)
 
-    if date:
+    elif date:
         pip = Pipeline()
         pip.process(date)
         pip.predict(date)
 
-    if run_app:
+    elif run_app:
         pip = Pipeline()
         pip.run_app()
 
@@ -106,10 +106,22 @@ class Pipeline():
     @staticmethod
     def _reformat_lab_data(data):
         df = data.copy()
-        df = df.rename({DBCONST.IMG_FNAME:MLCONST.IMG,
-                                DBCONST.USR_LBLS: MLCONST.LABEL}, axis=1)
+        logger = logging.getLogger('_reformat_lab_data')
+        logger.debug('Reformatting dataset...\n')
+        df = df.rename({DBCONST.IMG_FNAME:MLCONST.IMG}, axis=1)
 
-        #
+        hab_species = open('/data6/phytoplankton-db/hab.txt', 'r').read().splitlines()[:-1]
+
+        def label_mapping(x):
+            if x in hab_species:
+                return x
+            else:
+                return 'Other'
+
+        df[MLCONST.LABEL] = df[DBCONST.USR_LBLS].apply(label_mapping)
+        logger.info(f'HAB Lbl Distribution\n{"-" * 30}\n'
+                    f'{df[MLCONST.LABEL].value_counts()}')
+        return df
 
 
     @staticmethod
