@@ -40,10 +40,10 @@ def create_db(db_path):
     else:
         print("FAILED: TABLE ALREADY CREATED")
 
-@click.command()
-@click.option('--image_date', default=None, required=True, help='Image date')
-@click.option('--filtered_size', is_flag=True, default=False, help='Flag for filtered size range')
-@click.option('--save', is_flag=True, default=False, help='Save meta csv data')
+# @click.command()
+# @click.option('--image_date', default=None, required=True, help='Image date')
+# @click.option('--filtered_size', is_flag=True, default=False, help='Flag for filtered size range')
+# @click.option('--save', is_flag=True, default=False, help='Save meta csv data')
 def pull_data(image_date, filtered_size, save, db_path=opt.db_dir.format('test.db')):
     fname = f'hab_in_vitro_{image_date}'
     log_fname = os.path.join(opt.meta_dir, fname + '.log')
@@ -53,9 +53,15 @@ def pull_data(image_date, filtered_size, save, db_path=opt.db_dir.format('test.d
     db = Database(db_path)
 
     try:
-        expected_fmt = '%Y%m%d'
+        fmt = '%Y%m%d'
+        expected_fmt = '%Y-%m-%d'
         # convert date formatting for sql table
-        date = datetime.strptime(image_date, expected_fmt).strftime('%Y-%m-%d')
+        if image_date != datetime.strptime(image_date, expected_fmt).strftime(expected_fmt):
+            logger.debug('Converting datetime format')
+            date = datetime.strptime(image_date, fmt).strftime('%Y-%m-%d')
+        else:
+            date = image_date
+
     except:
         raise ValueError(f"time data '{date}' does not match format '{expected_fmt}'")
 
@@ -204,4 +210,5 @@ class Database:
 
 if __name__ == '__main__':
     # create_db()
-    pull_data()
+    # pull_data()
+    pass

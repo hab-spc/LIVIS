@@ -88,11 +88,14 @@ class Pipeline():
         logger = logging.getLogger('filtered_pull')
         csv_fname = os.path.join(opt.meta_dir, f'hab_in_vitro_{date}.csv')
 
-        try:
-            expected_fmt = '%Y%m%d'
-            image_date  = datetime.strptime(date, expected_fmt).strftime('%Y-%m-%d')
-        except:
-            raise ValueError(f"time data '{date}' does not match format '{expected_fmt}'")
+        # try:
+        expected_fmt = '%Y%m%d'
+        sample_id = '001'
+        if sample_id in date:
+            date = date.split('/')[0]
+        image_date  = datetime.strptime(date, expected_fmt).strftime('%Y-%m-%d')
+        # except:
+        #     raise ValueError(f"time data '{date}' does not match format '{expected_fmt}'")
 
         data = pull_data(image_date=image_date, filtered_size=True, save=False)
         if hab_eval:
@@ -103,8 +106,11 @@ class Pipeline():
     @staticmethod
     def _reformat_lab_data(data):
         df = data.copy()
-        df = df.rename(columns={DBCONST.IMG_FNAME:MLCONST.IMG,
+        df = df.rename({DBCONST.IMG_FNAME:MLCONST.IMG,
                                 DBCONST.USR_LBLS: MLCONST.LABEL}, axis=1)
+
+        #
+
 
     @staticmethod
     def run_app():
