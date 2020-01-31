@@ -86,20 +86,19 @@ class Pipeline():
 
     def filtered_pull(self, date, hab_eval=True):
         logger = logging.getLogger('filtered_pull')
-        csv_fname = os.path.join(opt.meta_dir, f'hab_in_vitro_{date}.csv')
 
-        # try:
-        expected_fmt = '%Y%m%d'
         sample_id = '001'
         if sample_id in date:
             date = date.split('/')[0]
-        image_date  = datetime.strptime(date, expected_fmt).strftime('%Y-%m-%d')
-        # except:
-        #     raise ValueError(f"time data '{date}' does not match format '{expected_fmt}'")
 
-        data = pull_data(image_date=image_date, filtered_size=True, save=False)
+        expected_fmt = '%Y%m%d'
+        if date != datetime.strptime(date, expected_fmt).strftime(expected_fmt):
+            raise ValueError(f"time data '{date}' does not match format '{expected_fmt}'")
+
+        data = pull_data(image_date=date, filtered_size=True, save=False)
         if hab_eval:
             data = Pipeline()._reformat_lab_data(data)
+        csv_fname = os.path.join(opt.meta_dir, f'hab_in_vitro_{date}.csv')
         data.to_csv(csv_fname, index=False)
         logger.info(f'Saved dataset as {csv_fname}')
 

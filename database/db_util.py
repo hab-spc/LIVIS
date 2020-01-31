@@ -53,15 +53,9 @@ def pull_data(image_date, filtered_size, save, db_path=opt.db_dir.format('test.d
     db = Database(db_path)
 
     try:
-        fmt = '%Y%m%d'
-        expected_fmt = '%Y-%m-%d'
+        expected_fmt = '%Y%m%d'
         # convert date formatting for sql table
-        if image_date != datetime.strptime(image_date, expected_fmt).strftime(expected_fmt):
-            logger.debug('Converting datetime format')
-            date = datetime.strptime(image_date, fmt).strftime('%Y-%m-%d')
-        else:
-            date = image_date
-
+        date = datetime.strptime(image_date, expected_fmt).strftime('%Y-%m-%d')
     except:
         raise ValueError(f"time data '{date}' does not match format '{expected_fmt}'")
 
@@ -72,7 +66,7 @@ def pull_data(image_date, filtered_size, save, db_path=opt.db_dir.format('test.d
     logger.info('SUCCESS: meta file generated')
     logger.info(f'Dates pulled: {date}')
     logger.info(f'Dataset size: {df.shape[0]}')
-    logger.info(f'Filtered size range (0.03-0.1): {filtered_size}')
+    logger.info(f'Filtered size range (0.03-1.0): {filtered_size}')
     logger.info(f'Label Distribution\n{"-"*30}\n{df[DBCONST.USR_LBLS].value_counts()}')
 
     if save:
