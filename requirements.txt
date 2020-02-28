@@ -2,3 +2,4 @@ pysqlite3
 click
 cv2
 tqdm
+pandas

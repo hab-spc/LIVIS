@@ -3,3 +3,5 @@ images/*
 LIVIS_automate/sampleImgs_static_html/*
 DB/*
 temp.py
+database/csv/*
+sample_images.tar.gz

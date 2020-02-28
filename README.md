@@ -23,6 +23,10 @@ git submodule update --init --recursive
  - Conda
  ``` bash
 $ pip install -r requirements.txt
+$ conda install -c conda-forge nodejs
+$ cd hab-viewer & npm install
+$ cd hab_service & npm install
+
 ```
 
 ### To Start a New Collection, run:

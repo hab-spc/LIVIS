@@ -3,91 +3,47 @@
 from __future__ import absolute_import
 
 # Standard dist imports
-import os
 from pathlib import Path
 
-from constants.genericconstants import DBConstants as DBCONST
 # Project level imports
-from constants.genericconstants import GenericConstants as CONST
+from constants.genericconstants import DBConstants as DBCONST
 
 # Module level constants
-DEFAULT_ENV = CONST.DEV_ENV  # SVCL local environment
-DEFAULT_ENV = CONST.PROD_ENV  # SPC Lab machine
 PROJECT_DIR = Path(__file__).resolve().parents[1]
 
 create_table_commands = {
-    'livis': 'CREATE TABLE livis ()',
-    'date_sampled': f'CREATE TABLE date_sampled ('
+    DBCONST.TABLE: f'CREATE TABLE {DBCONST.TABLE} ('
     # Image Info
-                    f'{DBCONST.IMG_FNAME} TEXT PRIMARY KEY,'
+                   f'{DBCONST.IMG_FNAME} TEXT PRIMARY KEY,'
                     f'{DBCONST.IMG_ID} TEXT,'
                     f'{DBCONST.IMG_TSTAMP} TEXT,'
                     f'{DBCONST.IMG_DATE} TEXT,'
-                    f'{DBCONST.IMG_TIME} TEXT,'
-                    f'{DBCONST.IMG_FSIZE} REAL,'
-                    f'{DBCONST.ECCENTRICITY} REAL,'
                     f'{DBCONST.ORIENT} REAL,'
                     f'{DBCONST.MJR_LEN} REAL,'
                     f'{DBCONST.MIN_LEN} REAL,'
                     f'{DBCONST.HEIGHT} REAL,'
                     f'{DBCONST.WIDTH} REAL,'
-                    f'{DBCONST.SOLIDITY} REAL,'
                     f'{DBCONST.ASPT_RATIO} REAL,'
-                    f'{DBCONST.EST_VOL} REAL,'
                     f'{DBCONST.AREA} REAL,'
 
-    # Machine Learning Info
-                    f'{DBCONST.MODEL_NAME} TEXT,'
-                    f'{DBCONST.USR_LBLS} TEXT,'
-                    f'{DBCONST.PRED} TEXT,'
-                    f'{DBCONST.PROB} REAL,'
-                    f'{DBCONST.PRED_TSTAMP} TEXT,'
-
     # Annotation Info
-                    f'{DBCONST.IMG_STATUS} TEXT,'
-                    f'{DBCONST.IMG_TAG} TEXT,'
-                    f'{DBCONST.ML_LBL} BOOLEAN,'
-                    f'{DBCONST.HMN_LBL} BOOLEAN)'
+                   f'{DBCONST.IMG_LBL} TEXT)'
 }
-
-# insert_into_table_commands = {
-#     'insert_images': ''' INSERT INTO date_sampled({}) VALUES({})'''.format(DBCONST().image_fields,
-#                                                                            '?,' * len(DBCONST().image_fields))
-# }
 
 select_from_table_commands = {
-    "select_images": '''SELECT * FROM date_sampled WHERE image_date="{}"''',
-    "select_images_filtered_size": '''SELECT * FROM date_sampled WHERE image_date="{}" 
-    and image_major_axis_length <=0.1 and image_major_axis_length >=0.03'''
+    "select_images":
+        '''SELECT * FROM {} WHERE image_date="{}"''',
+
+    "select_images_filtered_size":
+        '''SELECT * FROM {} WHERE image_date="{}" and 
+        image_major_axis_length <=0.1 and image_major_axis_length >=0.03''',
+
+    "select_all":
+        f'''SELECT * FROM {DBCONST.TABLE}'''
+
 }
 
-
-class Environment():
-    """Sets up Environment Variables, given the DEFAULT ENV
-    
-    Set up all directory-related variables under here
-    """
-
-    def __init__(self, env_type=None):
-        """Initializes Environment()
-        
-        Given the environment type (dev or prod), it sets up the model, data, and db direcotry related stuff. All variables need to be initialized with a string formatting so these are all RELATIVE PATHS
-        """
-        if env_type == CONST.DEV_ENV:
-            self.model_dir = '/data6/plankton_test_db_new/model/20191023/00:51:01/'
-            self.data_dir = os.path.join(PROJECT_DIR, 'images', '{}')
-            self.hab_ml_main = os.path.join(PROJECT_DIR, 'hab_ml', '{}')
-            self.db_dir = os.path.join(PROJECT_DIR, 'DB', '{}')
-            self.meta_dir = '/data6/phytoplankton-db/csv'
-        elif env_type == CONST.PROD_ENV:
-            self.model_dir = '/data6/plankton_test_db_new/model/20191023/00:51:01/'
-            self.data_dir = os.path.join(PROJECT_DIR, 'images', '{}')
-            self.hab_ml_main = os.path.join(PROJECT_DIR, 'hab_ml', '{}')
-            self.db_dir = os.path.join(PROJECT_DIR, 'DB', '{}')
-            self.meta_dir = '/data6/phytoplankton-db/csv'
-
-
-class Config(Environment):
+class Config():
     """Default Configs for training and inference
     After initializing instance of Config, user can import configurations as a
     state dictionary into other files. User can also add additional
@@ -116,8 +72,8 @@ class Config(Environment):
     MinObjectArea = 100
     Deconvolve = True
 
-    def __init__(self, env_type):
-        super().__init__(env_type)
+    DB_PATH = './database/test.db'
+    META_DIR = './database/csv'
 
     def _parse(self, kwargs):
         state_dict = self._state_dict()
@@ -158,4 +114,4 @@ def set_config(**kwargs):
     return opt
 
 
-opt = Config(DEFAULT_ENV)
+opt = Config()

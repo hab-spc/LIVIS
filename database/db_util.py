@@ -22,70 +22,99 @@ import pandas as pd
 # Project level imports
 from config.config import opt, create_table_commands, select_from_table_commands
 from constants.genericconstants import DBConstants as DBCONST
-from hab_ml.utils.logger import Logger
+from utils.logger import Logger
 
 # Module Level Constants
-DB_DIR = opt.db_dir
+TABLE_NAME = DBCONST.TABLE
 CREATE_CMD = create_table_commands
 SELECT_CMD = select_from_table_commands
 
-@click.command()
-@click.option('--db_path', default=None, help='DB Path to create.')
-def create_db(db_path):
-    db_path = db_path if db_path else DB_DIR
-    if not os.path.exists(db_path):
-        db = Database(db_path)
-        db.execute(operation='create new table', query=CREATE_CMD['date_sampled'])
-        print('SUCCESS: TABLE CREATED')
-    else:
-        print("FAILED: TABLE ALREADY CREATED")
 
-# @click.command()
-# @click.option('--image_date', default=None, required=True, help='Image date')
-# @click.option('--filtered_size', is_flag=True, default=False, help='Flag for filtered size range')
-# @click.option('--save', is_flag=True, default=False, help='Save meta csv data')
-def pull_data(image_date, filtered_size, save, db_path=opt.db_dir.format('test.db')):
-    fname = f'hab_in_vitro_{image_date}'
-    log_fname = os.path.join(opt.meta_dir, fname + '.log')
+def insert_db(df, db_path=opt.DB_PATH, table_name=TABLE_NAME):
+    """ Insert data into sqlite3 database
+
+    :param df (pd.DataFrame): Data to be inserted
+    :param db_path (str): Path to the database
+    :param table_name (str): Name of the table
+    :return:
+    """
+    try:
+        conn = sqlite3.connect(db_path)
+        print("\ta. Connected to Sqlite")
+        # Upload data to the database
+        df.to_sql(name=table_name, con=conn, if_exists='append', index=False)
+        print("\tb. Inserted into Database")
+        conn.commit()
+        conn.close()
+    except sqlite3.Error as error:
+        print("Failed to Insert into table ", error)
+
+    finally:
+        if conn:
+            conn.close()
+            print("\tc. Sqlite connection is closed")
+
+
+def pull_data(image_date=None, all=False, filtered_size=False, db_path=opt.DB_PATH):
+    """ Pull data from sql database
+
+    :param image_date(str): Image date filter for selecting images
+    :param all (bool): Flag for pulling all images from database
+    :param filtered_size (bool): Flag for indicating filtered size query command
+    :param db_path (str): Path to the database
+    :return:
+        pd.DataFrame - pulled data
+    """
+    def get_query(filtered_size, all):
+        """Get the query given the formatting options"""
+        if not all:
+            try:
+                expected_fmt = '%Y%m%d'
+                # convert date formatting for sql table
+                date = datetime.strptime(image_date, expected_fmt).strftime('%Y-%m-%d')
+
+                # Access sql database using filtered size query
+                size_suffix = '_filtered_size' if filtered_size else ''
+                query = SELECT_CMD["select_images" + size_suffix].format(date)
+            except:
+                raise ValueError(
+                    f"time data '{date}' does not match format '{expected_fmt}'")
+        else:
+            query = SELECT_CMD["select_all"]
+        return query
+
+    # Log data
+    fname = f'seascape_{datetime.now().strftime("%Y%m%d")}'
+    log_fname = os.path.join(opt.META_DIR, fname + '.log')
     Logger(log_fname, logging.INFO, False)
     logger = logging.getLogger('pull_data')
-    Logger.section_break(title='LIVIS')
+    Logger.section_break(title='SEASCAPE')
     db = Database(db_path)
 
-    try:
-        fmt = '%Y%m%d'
-        expected_fmt = '%Y-%m-%d'
-        # convert date formatting for sql table
-        if image_date != datetime.strptime(image_date, expected_fmt).strftime(expected_fmt):
-            logger.debug('Converting datetime format')
-            date = datetime.strptime(image_date, fmt).strftime('%Y-%m-%d')
-        else:
-            date = image_date
+    # Determine which query to run
+    # Pulls either all data or given a filtered option (size, date, etc.)
+    query = get_query(filtered_size, all)
 
-    except:
-        raise ValueError(f"time data '{date}' does not match format '{expected_fmt}'")
-
-    # Access sql database
-    size_suffix = '_filtered_size' if filtered_size else ''
-    query = SELECT_CMD["select_images"+size_suffix].format(date)
+    # Pull data from database
     df = pd.read_sql(query, db.conn)
-    logger.info('SUCCESS: meta file generated')
-    logger.info(f'Dates pulled: {date}')
-    logger.info(f'Dataset size: {df.shape[0]}')
-    logger.info(f'Filtered size range (0.03-0.1): {filtered_size}')
-    logger.info(f'Label Distribution\n{"-"*30}\n{df[DBCONST.USR_LBLS].value_counts()}')
 
-    if save:
-        csv_fname = os.path.join(opt.meta_dir, fname + '.csv')
-        df.to_csv(csv_fname, index=False)
-        logger.info(f'Saved dataset as {csv_fname}')
+    # Encode unlabeled images
+    df[DBCONST.IMG_LBL] = df[DBCONST.IMG_LBL].fillna(DBCONST.IMG_UNLBLED)
+
+    # Log results
+    logger.info('SUCCESS: meta file generated')
+    logger.info(f'Dates pulled: {df.image_date.unique()}')
+    logger.info(f'Dataset size: {df.shape[0]}')
+    logger.info(f'Label Distribution\n{"-"*30}\n{df[DBCONST.IMG_LBL].value_counts()}')
+
     return df
 
 class Database:
     """ Database instance for CRUD interaction
     """
+
     def __init__(self, db_path):
-        """ construct the database 
+        """ construct the database
         :param db_path: path to the database
         """
         self.conn = self.create_connection(db_path)
@@ -101,7 +130,7 @@ class Database:
             return conn
         except Error as e:
             print(e)
-            
+
         return None
 
     def close_connection(self):
@@ -109,7 +138,7 @@ class Database:
         """
         if self.conn != None:
             self.conn.close()
-    
+
     def execute(self, operation, query):
         """ execute the given query
         :param operation: caller function's name
@@ -119,7 +148,7 @@ class Database:
             cur = self.conn.cursor()
             cur.execute(query)
         except:
-            print("Error in " + str(operation)+ " operation")
+            print("Error in " + str(operation) + " operation")
             self.conn.rollback()
 
     def new_table(self, name, schema):
@@ -128,7 +157,7 @@ class Database:
         :param schema: the schema as a string
         :return: None
         """
-        query = "CREATE TABLE " + str(name) + " (" + str(schema) +");"
+        query = "CREATE TABLE " + str(name) + " (" + str(schema) + ");"
         self.execute("create new table", query)
 
     def create(self, query, data):
@@ -155,7 +184,7 @@ class Database:
             query = "SELECT " + cols_needed + " FROM " + table_name
         else:
             query = "SELECT " + cols_needed + " FROM " + table_name + " " + conditions
-        
+
         try:
             cur = self.conn.cursor()
             cur.execute(query)
@@ -164,13 +193,12 @@ class Database:
             print("error in select operation")
             self.conn.rollback()
 
-
     def update(self, table_name, new_vals, prim_key_id):
         """ update certain values specified by query
         :param table_name: name of th table to update
         :param new_vals: a dict with attributes as keys, and
                          values as values
-        :param prim_key_id: key value pair as list of size 2 
+        :param prim_key_id: key value pair as list of size 2
                          primary key identifier for row to update
         :return: None
         """
@@ -193,8 +221,8 @@ class Database:
 
     def delete(self, table_name, prim_key_id):
         """ delete a row from specified table, and prim key value
-        :param table_name: name of the table to delete from 
-        :param prim_key_id: key value pair as list of size 2 
+        :param table_name: name of the table to delete from
+        :param prim_key_id: key value pair as list of size 2
                          primary key identifier for row to update
         :return: None
         """
@@ -204,11 +232,6 @@ class Database:
                 + str(prim_key_id[0]) \
                 + " = " \
                 + str(prim_key_id[1]) \
-
-        # execute the query
+ \
+            # execute the query
         self.execute("delete", query)
-
-if __name__ == '__main__':
-    # create_db()
-    # pull_data()
-    pass
