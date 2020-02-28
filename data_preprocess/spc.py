@@ -111,8 +111,6 @@ def process_bundle_list(bundle_queue, output_queue):
 
 
 def insert_database(df, db_path, table_name):
-
-    #TODO: Check if the table exists in the path
     try:
         conn = sqlite3.connect(db_path)
         print("\ta. Connected to Sqlite")
