@@ -16,10 +16,14 @@ from hab_ml.utils.constants import Constants as MLCONST
 
 # Module level constants
 
-def main(date=None, filtered_pull=False, run_app=None):
+def main(date=None, pull=False, filtered_pull=False, run_app=None):
     if filtered_pull and date:
         pip = Pipeline()
         pip.filtered_pull(date=date)
+
+    elif pull and date:
+        pip = Pipeline()
+        pip.pull(date=date)
 
     elif date:
         pip = Pipeline()
@@ -84,22 +88,31 @@ class Pipeline():
             # Convert images using batchprocess in SPC
             batchprocess(os.path.join(img_dir, '00000'))
 
+    def pull(self, date, hab_eval=True):
+        logger = logging.getLogger(__name__)
+
+        data = pull_data(image_date=date, all=True, filtered_size=True, save=False)
+        if hab_eval:
+            data = Pipeline()._reformat_lab_data(data)
+        csv_fname = os.path.join(opt.meta_dir, f'hab_in_vitro_{date}.csv')
+        data.to_csv(csv_fname, index=False)
+        logger.info(f'Saved dataset as {csv_fname}')
+
     def filtered_pull(self, date, hab_eval=True):
         logger = logging.getLogger('filtered_pull')
-        csv_fname = os.path.join(opt.meta_dir, f'hab_in_vitro_{date}.csv')
 
-        # try:
-        expected_fmt = '%Y%m%d'
         sample_id = '001'
         if sample_id in date:
             date = date.split('/')[0]
-        image_date  = datetime.strptime(date, expected_fmt).strftime('%Y-%m-%d')
-        # except:
-        #     raise ValueError(f"time data '{date}' does not match format '{expected_fmt}'")
 
-        data = pull_data(image_date=image_date, filtered_size=True, save=False)
+        expected_fmt = '%Y%m%d'
+        if date != datetime.strptime(date, expected_fmt).strftime(expected_fmt):
+            raise ValueError(f"time data '{date}' does not match format '{expected_fmt}'")
+
+        data = pull_data(image_date=date, all=False, filtered_size=True, save=False)
         if hab_eval:
             data = Pipeline()._reformat_lab_data(data)
+        csv_fname = os.path.join(opt.meta_dir, f'hab_in_vitro_{date}.csv')
         data.to_csv(csv_fname, index=False)
         logger.info(f'Saved dataset as {csv_fname}')
 
@@ -137,7 +150,9 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--date', type=str, help='Format: YYYYMMDD')
     parser.add_argument('--run_app', action='store_true', help='Run annotation tool')
+    parser.add_argument('--pull', action='store_true', help='Pull all data')
     parser.add_argument('--filtered_pull', action='store_true', help='Pull data')
     args = parser.parse_args()
 
-    main(date=args.date, filtered_pull=args.filtered_pull, run_app=args.run_app)
+    main(date=args.date, pull=args.pull,
+         filtered_pull=args.filtered_pull, run_app=args.run_app)
