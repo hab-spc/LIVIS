@@ -58,7 +58,8 @@ create_table_commands = {
 select_from_table_commands = {
     "select_images": '''SELECT * FROM date_sampled WHERE image_date="{}"''',
     "select_images_filtered_size": '''SELECT * FROM date_sampled WHERE image_date="{}" 
-    and image_major_axis_length <=1.0 and image_major_axis_length >=0.03'''
+    and image_major_axis_length <=1.0 and image_major_axis_length >=0.03''',
+    "select_all": '''SELECT * FROM date_sampled WHERE image_major_axis_length <=1.0 and image_major_axis_length >=0.03'''
 }
 
 

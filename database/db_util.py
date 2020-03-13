@@ -41,10 +41,11 @@ def create_db(db_path):
         print("FAILED: TABLE ALREADY CREATED")
 
 # @click.command()
-# @click.option('--image_date', default=None, required=True, help='Image date')
+# @click.option('--image_date', default=None, help='Image date')
+# @click.option('--all', is_flag=True, default=False, help='Flag for pulling all data under defined size range 0.03 -> 1.0')
 # @click.option('--filtered_size', is_flag=True, default=False, help='Flag for filtered size range')
 # @click.option('--save', is_flag=True, default=False, help='Save meta csv data')
-def pull_data(image_date, filtered_size, save, db_path=opt.db_dir.format('test.db')):
+def pull_data(image_date, all, filtered_size, save, db_path=opt.db_dir.format('test.db')):
     fname = f'hab_in_vitro_{image_date}'
     log_fname = os.path.join(opt.meta_dir, fname + '.log')
     Logger(log_fname, logging.INFO, False)
@@ -52,19 +53,23 @@ def pull_data(image_date, filtered_size, save, db_path=opt.db_dir.format('test.d
     Logger.section_break(title='LIVIS')
     db = Database(db_path)
 
-    try:
-        expected_fmt = '%Y%m%d'
-        # convert date formatting for sql table
-        date = datetime.strptime(image_date, expected_fmt).strftime('%Y-%m-%d')
-    except:
-        raise ValueError(f"time data '{date}' does not match format '{expected_fmt}'")
+    if not all:
+        try:
+            expected_fmt = '%Y%m%d'
+            # convert date formatting for sql table
+            date = datetime.strptime(image_date, expected_fmt).strftime('%Y-%m-%d')
 
-    # Access sql database
-    size_suffix = '_filtered_size' if filtered_size else ''
-    query = SELECT_CMD["select_images"+size_suffix].format(date)
+            # Access sql database
+            size_suffix = '_filtered_size' if filtered_size else ''
+            query = SELECT_CMD["select_images"+size_suffix].format(date)
+        except:
+            raise ValueError(f"time data '{date}' does not match format '{expected_fmt}'")
+    else:
+        query = SELECT_CMD["select_all"]
+
     df = pd.read_sql(query, db.conn)
     logger.info('SUCCESS: meta file generated')
-    logger.info(f'Dates pulled: {date}')
+    logger.info(f'Dates pulled: {df.image_date.unique()}')
     logger.info(f'Dataset size: {df.shape[0]}')
     logger.info(f'Filtered size range (0.03-1.0): {filtered_size}')
     logger.info(f'Label Distribution\n{"-"*30}\n{df[DBCONST.USR_LBLS].value_counts()}')
